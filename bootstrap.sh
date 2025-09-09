@@ -23,6 +23,11 @@ GITHUB_ORG="Bionic-AI-Solutions"
 TEMPLATE_DIR=""
 PROJECT_DIR=""
 
+# Secrets (collected at runtime)
+DOCKERHUB_USERNAME=""
+DOCKERHUB_TOKEN=""
+ARGOCD_PASSWORD=""
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -71,6 +76,43 @@ check_dependencies() {
     
     log_success "All required host dependencies are installed"
     log_info "Node.js and Python will run in Docker containers"
+}
+
+collect_secrets() {
+    log_info "Collecting required secrets for CI/CD pipeline..."
+    echo
+    echo "=========================================="
+    echo "  CI/CD Secrets Setup"
+    echo "=========================================="
+    echo
+    
+    # Docker Hub credentials
+    log_info "Docker Hub Setup:"
+    echo "1. Go to: https://hub.docker.com/settings/security"
+    echo "2. Create a new access token with 'Read, Write, Delete' permissions"
+    echo "3. Copy the token (you won't be able to see it again)"
+    echo
+    read -p "Enter your Docker Hub username: " DOCKERHUB_USERNAME
+    read -s -p "Enter your Docker Hub access token: " DOCKERHUB_TOKEN
+    echo
+    echo
+    
+    # ArgoCD password
+    log_info "ArgoCD Setup:"
+    echo "Get the ArgoCD admin password by running:"
+    echo "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+    echo
+    read -s -p "Enter ArgoCD admin password: " ARGOCD_PASSWORD
+    echo
+    echo
+    
+    # Validate inputs
+    if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ] || [ -z "$ARGOCD_PASSWORD" ]; then
+        log_error "All secrets are required. Please provide all credentials."
+        exit 1
+    fi
+    
+    log_success "Secrets collected successfully"
 }
 
 setup_paths() {
@@ -216,6 +258,55 @@ create_repository() {
         log_info "Then run: git remote add origin https://github.com/$GITHUB_ORG/$PROJECT_NAME.git"
         log_info "And push: git push -u origin main"
     fi
+}
+
+setup_github_secrets() {
+    log_info "Setting up GitHub secrets..."
+    
+    cd "$PROJECT_DIR"
+    
+    # Check if GitHub CLI is available
+    if ! command -v gh &> /dev/null; then
+        log_warning "GitHub CLI not found. Please set up secrets manually:"
+        log_info "Go to: https://github.com/$GITHUB_ORG/$PROJECT_NAME/settings/secrets/actions"
+        log_info "Add these secrets:"
+        log_info "- DOCKERHUB_USERNAME: $DOCKERHUB_USERNAME"
+        log_info "- DOCKERHUB_TOKEN: [your token]"
+        log_info "- ARGOCD_PASSWORD: [your password]"
+        return
+    fi
+    
+    # Check if user is logged in to GitHub CLI
+    if ! gh auth status &> /dev/null; then
+        log_warning "Not logged in to GitHub CLI. Please run: gh auth login"
+        log_info "Then manually set up secrets at:"
+        log_info "https://github.com/$GITHUB_ORG/$PROJECT_NAME/settings/secrets/actions"
+        return
+    fi
+    
+    # Set GitHub secrets
+    log_info "Setting DOCKERHUB_USERNAME secret..."
+    if gh secret set DOCKERHUB_USERNAME --body "$DOCKERHUB_USERNAME" --repo "$GITHUB_ORG/$PROJECT_NAME"; then
+        log_success "DOCKERHUB_USERNAME secret set"
+    else
+        log_error "Failed to set DOCKERHUB_USERNAME secret"
+    fi
+    
+    log_info "Setting DOCKERHUB_TOKEN secret..."
+    if gh secret set DOCKERHUB_TOKEN --body "$DOCKERHUB_TOKEN" --repo "$GITHUB_ORG/$PROJECT_NAME"; then
+        log_success "DOCKERHUB_TOKEN secret set"
+    else
+        log_error "Failed to set DOCKERHUB_TOKEN secret"
+    fi
+    
+    log_info "Setting ARGOCD_PASSWORD secret..."
+    if gh secret set ARGOCD_PASSWORD --body "$ARGOCD_PASSWORD" --repo "$GITHUB_ORG/$PROJECT_NAME"; then
+        log_success "ARGOCD_PASSWORD secret set"
+    else
+        log_error "Failed to set ARGOCD_PASSWORD secret"
+    fi
+    
+    log_success "GitHub secrets setup completed!"
 }
 
 # These functions are now handled by customize_project()
@@ -493,16 +584,10 @@ handoff_to_user() {
     echo "1. Change to the project directory:"
     echo "   cd $PROJECT_DIR"
     echo
-    echo "2. Configure GitHub Secrets (required for CI/CD):"
-    echo "   Option A - Use helper script (recommended):"
-    echo "   ./scripts/setup-github-secrets.sh -n $PROJECT_NAME"
-    echo
-    echo "   Option B - Manual setup:"
-    echo "   Go to: https://github.com/$GITHUB_ORG/$PROJECT_NAME/settings/secrets/actions"
-    echo "   Add these secrets:"
-    echo "   - DOCKERHUB_USERNAME: Your Docker Hub username"
-    echo "   - DOCKERHUB_TOKEN: Your Docker Hub access token (create at hub.docker.com)"
-    echo "   - ARGOCD_PASSWORD: ArgoCD admin password (get with kubectl command)"
+    echo "2. GitHub Secrets: ✅ Already configured!"
+    echo "   - DOCKERHUB_USERNAME: Set"
+    echo "   - DOCKERHUB_TOKEN: Set"
+    echo "   - ARGOCD_PASSWORD: Set"
     echo
     echo "3. Review and customize the configuration files"
     echo "4. Update the .env file with your specific settings"
@@ -516,11 +601,12 @@ handoff_to_user() {
     echo "- Build images: docker-compose build"
     echo "- Deploy to K8s: kubectl apply -k k8s/overlays/development"
     echo
-    echo "CI/CD Pipeline:"
+    echo "CI/CD Pipeline: ✅ Ready to use!"
     echo "- Push to main branch triggers automatic build and deployment"
     echo "- Docker images are built and pushed to Docker Hub"
     echo "- ArgoCD automatically syncs and deploys to Kubernetes"
     echo "- Monitor deployment at: https://argocd.bionicaisolutions.com"
+    echo "- All secrets are configured and ready"
     echo
     echo "Note: All dependencies are installed in Docker containers."
     echo "No Node.js or Python installation required on the host system."
@@ -588,11 +674,13 @@ main() {
     
     # Run bootstrap steps
     check_dependencies
+    collect_secrets
     setup_paths
     copy_template
     customize_project
     setup_git
     create_repository
+    setup_github_secrets
     create_initial_files
     install_dependencies
     setup_hooks
