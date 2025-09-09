@@ -183,7 +183,7 @@ spec:
         - containerPort: 5432
         env:
         - name: POSTGRES_DB
-          value: "dev_pynode_db"
+          value: "dev_template_db"
         - name: POSTGRES_USER
           value: "postgres"
         - name: POSTGRES_PASSWORD
@@ -756,7 +756,7 @@ spec:
             - /bin/bash
             - -c
             - |
-              pg_dump -h postgres-service -U postgres dev_pynode_db | gzip > /backup/backup-$(date +%Y%m%d).sql.gz
+              pg_dump -h postgres-service -U postgres dev_template_db | gzip > /backup/backup-$(date +%Y%m%d).sql.gz
             env:
             - name: PGPASSWORD
               valueFrom:

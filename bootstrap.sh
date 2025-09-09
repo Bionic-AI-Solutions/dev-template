@@ -228,6 +228,7 @@ customize_project() {
             log_info "Updating $file..."
             sed -i "s/dev-template/$PROJECT_NAME/g" "$file"
             sed -i "s/dev_pynode_db/${PROJECT_NAME//-/_}_db/g" "$file"
+            sed -i "s/dev_template_db/${PROJECT_NAME//-/_}_db/g" "$file"
             sed -i "s/Dev-PyNode/$PROJECT_NAME/g" "$file"
             sed -i "s/AI-powered development platform with Node.js and Python backend/$DESCRIPTION/g" "$file"
         fi

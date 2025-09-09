@@ -26,7 +26,7 @@ DEBUG=true                             # Enable debug mode
 # Primary database connection
 DB_HOST=postgres                       # Database host
 DB_PORT=5432                          # Database port
-DB_NAME=dev_pynode_db                 # Database name
+DB_NAME=dev_template_db                 # Database name
 DB_USER=postgres                      # Database user
 DB_PASSWORD=postgres_password         # Database password
 DB_SSL=false                          # Enable SSL connection
@@ -35,7 +35,7 @@ DB_POOL_MAX=10                        # Maximum connection pool size
 DB_CONNECTION_TIMEOUT=60000           # Connection timeout in ms
 
 # Alternative connection string format
-DATABASE_URL=postgresql://postgres:postgres_password@postgres:5432/dev_pynode_db
+DATABASE_URL=postgresql://postgres:postgres_password@postgres:5432/dev_template_db
 ```
 
 #### Redis

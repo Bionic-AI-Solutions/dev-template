@@ -100,7 +100,7 @@ npm run db:migrate
 npm run db:seed
 
 # Access database
-docker-compose exec postgres psql -U postgres -d dev_pynode_db
+docker-compose exec postgres psql -U postgres -d dev_template_db
 ```
 
 ### AI Model Management

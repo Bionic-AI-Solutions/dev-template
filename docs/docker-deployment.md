@@ -75,7 +75,7 @@ APP_HOST=0.0.0.0
 # Database
 DB_HOST=postgres
 DB_PORT=5432
-DB_NAME=dev_pynode_db
+DB_NAME=dev_template_db
 DB_USER=postgres
 DB_PASSWORD=your-secure-password
 
@@ -127,7 +127,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=dev_pynode_db
+      - POSTGRES_DB=dev_template_db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres_password
     volumes:
@@ -430,10 +430,10 @@ services:
 
 ```bash
 # Create backup
-docker-compose exec postgres pg_dump -U postgres dev_pynode_db > backup.sql
+docker-compose exec postgres pg_dump -U postgres dev_template_db > backup.sql
 
 # Restore backup
-docker-compose exec -T postgres psql -U postgres dev_pynode_db < backup.sql
+docker-compose exec -T postgres psql -U postgres dev_template_db < backup.sql
 ```
 
 ### Automated Backups
@@ -448,7 +448,7 @@ BACKUP_DIR="/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 # Database backup
-docker-compose exec -T postgres pg_dump -U postgres dev_pynode_db | gzip > "$BACKUP_DIR/db_$DATE.sql.gz"
+docker-compose exec -T postgres pg_dump -U postgres dev_template_db | gzip > "$BACKUP_DIR/db_$DATE.sql.gz"
 
 # MinIO backup
 docker-compose exec minio mc mirror /data "$BACKUP_DIR/minio_$DATE/"

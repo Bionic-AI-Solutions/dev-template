@@ -559,7 +559,7 @@ span.setAttributes({
 **Conventions**:
 - Use descriptive names: `http_request_duration_seconds`
 - Include units: `_seconds`, `_bytes`, `_total`
-- Use consistent prefixes: `dev_pynode_`
+- Use consistent prefixes: `dev_template_`
 
 ### 2. Dashboard Design
 

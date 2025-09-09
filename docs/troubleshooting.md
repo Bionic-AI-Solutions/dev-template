@@ -111,7 +111,7 @@ docker-compose exec postgres pg_isready -U postgres
 docker-compose logs postgres
 
 # Test connection
-docker-compose exec postgres psql -U postgres -d dev_pynode_db -c "SELECT 1;"
+docker-compose exec postgres psql -U postgres -d dev_template_db -c "SELECT 1;"
 ```
 
 #### Solutions
@@ -144,7 +144,7 @@ docker-compose down -v
 docker-compose up -d
 
 # Or restore from backup
-docker-compose exec -T postgres psql -U postgres dev_pynode_db < backup.sql
+docker-compose exec -T postgres psql -U postgres dev_template_db < backup.sql
 ```
 
 ### 3. Redis Connection Issues
@@ -687,7 +687,7 @@ p.sort_stats('cumulative').print_stats(10)
 docker-compose stop backend
 
 # Restore database
-docker-compose exec -T postgres psql -U postgres dev_pynode_db < backup.sql
+docker-compose exec -T postgres psql -U postgres dev_template_db < backup.sql
 
 # Start application
 docker-compose start backend
@@ -780,7 +780,7 @@ groups:
 # backup.sh
 
 # Database backup
-docker-compose exec -T postgres pg_dump -U postgres dev_pynode_db | gzip > "backup/db_$(date +%Y%m%d_%H%M%S).sql.gz"
+docker-compose exec -T postgres pg_dump -U postgres dev_template_db | gzip > "backup/db_$(date +%Y%m%d_%H%M%S).sql.gz"
 
 # File backup
 docker-compose exec minio mc mirror /data "backup/files_$(date +%Y%m%d_%H%M%S)/"
