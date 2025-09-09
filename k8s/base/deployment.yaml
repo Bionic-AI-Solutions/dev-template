@@ -18,6 +18,7 @@ spec:
       containers:
       - name: dev-template
         image: docker4zerocool/dev-template:latest
+        command: ["/startup.sh"]
         ports:
         - containerPort: 22
           name: ssh
@@ -38,11 +39,15 @@ spec:
         livenessProbe:
           tcpSocket:
             port: 22
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
         readinessProbe:
           tcpSocket:
             port: 22
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
       restartPolicy: Always

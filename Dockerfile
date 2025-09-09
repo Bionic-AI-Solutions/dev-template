@@ -84,22 +84,51 @@ CMD ["/startup.sh", "tail", "-f", "/dev/null"]
 # =============================================================================
 FROM base AS production
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Install Python virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy any application files (when used as template)
-COPY --chown=nodejs:nodejs . .
+# Install Python development tools
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    pydantic \
+    sqlalchemy \
+    psycopg2-binary \
+    redis \
+    python-dotenv
 
-# Switch to non-root user
-USER nodejs
+# Install Node.js development tools
+RUN npm install -g \
+    typescript \
+    ts-node \
+    nodemon \
+    eslint \
+    prettier \
+    concurrently
 
-# Expose port
-EXPOSE 3000
+# Create SSH configuration
+RUN mkdir -p /var/run/sshd && \
+    adduser -D -s /bin/bash developer && \
+    echo 'root:dev123' | chpasswd && \
+    echo 'developer:dev123' | chpasswd && \
+    echo 'developer ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+# Configure SSH
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Default command
-CMD ["node", "--version"]
+# Generate SSH host keys
+RUN ssh-keygen -A
+
+# Create startup script
+RUN echo '#!/bin/sh' > /startup.sh && \
+    echo '/usr/sbin/sshd -D &' >> /startup.sh && \
+    echo 'tail -f /dev/null' >> /startup.sh && \
+    chmod +x /startup.sh
+
+# Expose ports
+EXPOSE 22 3000
+
+# Set startup command
+CMD ["/startup.sh"]
