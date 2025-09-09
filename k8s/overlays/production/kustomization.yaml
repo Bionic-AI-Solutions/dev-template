@@ -2,38 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: dev-pynode-production
-  annotations:
-    description: "Production environment configuration for dev-pynode"
+  name: dev-template-production
 
-namespace: dev-pynode
+namespace: dev-template
 
 resources:
   - ../../base
 
 patchesStrategicMerge:
   - deployment-patch.yaml
-  - configmap-patch.yaml
-
-images:
-  - name: bionic-ai-solutions/dev-pynode
-    newTag: v1.0.0
-
-replicas:
-  - name: dev-pynode
-    count: 3
-  - name: dev-pynode-frontend
-    count: 3
 
 commonLabels:
   environment: production
 
-configMapGenerator:
-  - name: dev-pynode-config
-    behavior: merge
-    literals:
-      - NODE_ENV=production
-      - DEBUG=false
-      - LOG_LEVEL=info
-      - SENTRY_ENVIRONMENT=production
-
+images:
+  - name: docker4zerocool/dev-template
+    newTag: latest
