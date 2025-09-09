@@ -122,9 +122,19 @@ customize_project() {
         "k8s/base/deployment.yaml"
         "k8s/base/service.yaml"
         "k8s/base/configmap.yaml"
+        "k8s/base/namespace.yaml"
+        "k8s/base/secret.yaml"
+        "k8s/base/ingress.yaml"
+        "k8s/base/pvc.yaml"
+        "k8s/base/hpa.yaml"
+        "k8s/base/networkpolicy.yaml"
+        "k8s/base/tcp-service.yaml"
+        "k8s/base/tcp-configmap.yaml"
+        "k8s/base/kustomization.yaml"
         "k8s/overlays/development/kustomization.yaml"
         "k8s/overlays/staging/kustomization.yaml"
         "k8s/overlays/production/kustomization.yaml"
+        "k8s/overlays/production/deployment-patch.yaml"
     )
     
     for file in "${files_to_update[@]}"; do
@@ -483,10 +493,17 @@ handoff_to_user() {
     echo "1. Change to the project directory:"
     echo "   cd $PROJECT_DIR"
     echo
-    echo "2. Review and customize the configuration files"
-    echo "3. Update the .env file with your specific settings"
-    echo "4. Start development: docker-compose up -d"
-    echo "5. Access the application at http://localhost:3000"
+    echo "2. Configure GitHub Secrets (required for CI/CD):"
+    echo "   Go to: https://github.com/$GITHUB_ORG/$PROJECT_NAME/settings/secrets/actions"
+    echo "   Add these secrets:"
+    echo "   - DOCKERHUB_USERNAME: Your Docker Hub username"
+    echo "   - DOCKERHUB_TOKEN: Your Docker Hub access token"
+    echo "   - ARGOCD_PASSWORD: ArgoCD admin password"
+    echo
+    echo "3. Review and customize the configuration files"
+    echo "4. Update the .env file with your specific settings"
+    echo "5. Start development: docker-compose up -d"
+    echo "6. Access the application at http://localhost:3000"
     echo
     echo "Useful commands:"
     echo "- Start development: docker-compose up -d"
@@ -494,6 +511,12 @@ handoff_to_user() {
     echo "- Run Python tests: docker-compose run --rm python python -m pytest"
     echo "- Build images: docker-compose build"
     echo "- Deploy to K8s: kubectl apply -k k8s/overlays/development"
+    echo
+    echo "CI/CD Pipeline:"
+    echo "- Push to main branch triggers automatic build and deployment"
+    echo "- Docker images are built and pushed to Docker Hub"
+    echo "- ArgoCD automatically syncs and deploys to Kubernetes"
+    echo "- Monitor deployment at: https://argocd.bionicaisolutions.com"
     echo
     echo "Note: All dependencies are installed in Docker containers."
     echo "No Node.js or Python installation required on the host system."

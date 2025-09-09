@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE: docker4zerocool/dev-template
+  DOCKER_IMAGE: docker4zerocool/${{ github.repository_owner }}-${{ github.event.repository.name }}
   DOCKER_TAG: ${{ github.sha }}
 
 jobs:
@@ -88,23 +88,26 @@ jobs:
         echo "Logging into ArgoCD at $ARGOCD_SERVER"
         argocd login $ARGOCD_SERVER --username admin --password ${{ secrets.ARGOCD_PASSWORD }}
         
+        # Get the application name from repository name
+        APP_NAME="${{ github.event.repository.name }}"
+        
         # Check if application exists
-        if argocd app get dev-template >/dev/null 2>&1; then
-          echo "Application dev-template exists, syncing..."
-          argocd app sync dev-template --force
+        if argocd app get $APP_NAME >/dev/null 2>&1; then
+          echo "Application $APP_NAME exists, syncing..."
+          argocd app sync $APP_NAME --force
           
           # Wait for sync to complete
-          argocd app wait dev-template --health --timeout 300
+          argocd app wait $APP_NAME --health --timeout 300
           
           echo "ArgoCD sync completed successfully"
         else
-          echo "Application dev-template not found, creating..."
+          echo "Application $APP_NAME not found, creating..."
           # Create the application if it doesn't exist
-          argocd app create dev-template \
-            --repo https://github.com/Bionic-AI-Solutions/dev-template.git \
+          argocd app create $APP_NAME \
+            --repo https://github.com/${{ github.repository }}.git \
             --path k8s/overlays/production \
             --dest-server https://kubernetes.default.svc \
-            --dest-namespace default \
+            --dest-namespace $APP_NAME \
             --sync-policy automated \
             --auto-prune \
             --self-heal
