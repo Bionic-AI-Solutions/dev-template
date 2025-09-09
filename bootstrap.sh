@@ -220,6 +220,14 @@ customize_project() {
         fi
     done
     
+    # Special handling for docker-compose.yml to fix network names
+    if [ -f "docker-compose.yml" ]; then
+        log_info "Fixing network names in docker-compose.yml..."
+        # Replace all network references with consistent naming
+        sed -i "s/${PROJECT_NAME}-network/${PROJECT_NAME}-network/g" docker-compose.yml
+        sed -i "s/dev-template-network/${PROJECT_NAME}-network/g" docker-compose.yml
+    fi
+    
     # Update .env.example to .env
     if [ -f ".env.example" ]; then
         cp .env.example .env
@@ -498,7 +506,9 @@ setup_git() {
     # Initialize git if not already initialized
     if [ ! -d ".git" ]; then
         git init
-        log_success "Git repository initialized"
+        # Set default branch to main
+        git branch -M main
+        log_success "Git repository initialized with main branch"
     fi
     
     # Add all files
