@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: dev-pynode-development
+  annotations:
+    description: "Development environment configuration for dev-pynode"
+
+namespace: dev-pynode
+
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - deployment-patch.yaml
+  - configmap-patch.yaml
+
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: dev-pynode
+    path: deployment-patch.json
+
+images:
+  - name: bionic-ai-solutions/dev-pynode
+    newTag: dev-latest
+
+replicas:
+  - name: dev-pynode
+    count: 1
+  - name: dev-pynode-frontend
+    count: 1
+
+commonLabels:
+  environment: development
+
+configMapGenerator:
+  - name: dev-pynode-config
+    behavior: merge
+    literals:
+      - NODE_ENV=development
+      - DEBUG=true
+      - LOG_LEVEL=debug
+      - SENTRY_ENVIRONMENT=development
+

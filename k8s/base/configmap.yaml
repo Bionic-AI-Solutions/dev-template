@@ -1,0 +1,212 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-pynode-config
+  namespace: dev-pynode
+  labels:
+    app: dev-pynode
+    component: config
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  APP_NAME: "dev-pynode"
+  APP_VERSION: "1.0.0"
+  APP_PORT: "3000"
+  APP_HOST: "0.0.0.0"
+  DEBUG: "false"
+  
+  # Database Configuration
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "dev_pynode_db"
+  DB_SSL: "true"
+  DB_POOL_MIN: "2"
+  DB_POOL_MAX: "10"
+  DB_CONNECTION_TIMEOUT: "60000"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_POOL_SIZE: "10"
+  REDIS_CONNECT_TIMEOUT: "10000"
+  REDIS_COMMAND_TIMEOUT: "5000"
+  REDIS_CLUSTER_ENABLED: "false"
+  
+  # MinIO Configuration
+  MINIO_ENDPOINT: "minio-service"
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_REGION: "us-east-1"
+  MINIO_BUCKET_NAME: "dev-pynode-storage"
+  MINIO_BUCKET_REGION: "us-east-1"
+  MINIO_CONSOLE_PORT: "9001"
+  
+  # Local AI Configuration
+  LOCAL_AI_BASE_URL: "http://ollama-service:11434"
+  LOCAL_AI_MODEL: "llama2"
+  LOCAL_AI_TIMEOUT: "60000"
+  LOCAL_AI_MAX_TOKENS: "2000"
+  LOCAL_AI_TEMPERATURE: "0.7"
+  LOCAL_AI_TOP_P: "0.9"
+  LOCAL_AI_TOP_K: "40"
+  
+  # Ollama Configuration
+  OLLAMA_BASE_URL: "http://ollama-service:11434"
+  OLLAMA_MODEL: "llama2"
+  
+  # Authentication & Security
+  JWT_EXPIRES_IN: "7d"
+  JWT_REFRESH_EXPIRES_IN: "30d"
+  HASH_ROUNDS: "12"
+  
+  # CORS Configuration
+  CORS_ORIGIN: "https://dev-pynode.bionic-ai-solutions.com"
+  CORS_CREDENTIALS: "true"
+  
+  # Logging & Monitoring
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  LOG_FILE_ENABLED: "true"
+  LOG_FILE_PATH: "./logs/app.log"
+  LOG_MAX_FILES: "5"
+  LOG_MAX_SIZE: "10m"
+  SENTRY_ENVIRONMENT: "production"
+  
+  # Rate Limiting
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: "false"
+  
+  # WebSocket Configuration
+  WS_ENABLED: "true"
+  WS_PORT: "3001"
+  WS_CORS_ORIGIN: "https://dev-pynode.bionic-ai-solutions.com"
+  
+  # API Documentation
+  API_DOCS_ENABLED: "true"
+  API_DOCS_PATH: "/docs"
+  
+  # Container Configuration
+  CONTAINER_PORT: "3000"
+  HEALTH_CHECK_ENDPOINT: "/health"
+  READINESS_CHECK_ENDPOINT: "/ready"
+  
+  # Feature Flags
+  FEATURE_NEW_UI: "false"
+  FEATURE_ANALYTICS: "true"
+  FEATURE_BETA_FEATURES: "false"
+  
+  # AI Models Configuration
+  AI_MODELS_PATH: "/opt/ai-models"
+  DEFAULT_MODELS: "llama2,llama2:13b,codellama"
+  MODEL_DOWNLOAD_TIMEOUT: "3600000"
+  MODEL_DOWNLOAD_RETRIES: "3"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-pynode-nginx-config
+  namespace: dev-pynode
+  labels:
+    app: dev-pynode
+    component: nginx
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    
+    http {
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+        
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+        
+        access_log /var/log/nginx/access.log main;
+        error_log /var/log/nginx/error.log;
+        
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_proxied any;
+        gzip_comp_level 6;
+        gzip_types
+            text/plain
+            text/css
+            text/xml
+            text/javascript
+            application/json
+            application/javascript
+            application/xml+rss
+            application/atom+xml
+            image/svg+xml;
+        
+        upstream backend {
+            server dev-pynode-service:3000;
+        }
+        
+        server {
+            listen 80;
+            server_name _;
+            
+            # Security headers
+            add_header X-Frame-Options DENY;
+            add_header X-Content-Type-Options nosniff;
+            add_header X-XSS-Protection "1; mode=block";
+            add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+            
+            # Health check endpoint
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+            
+            # API routes
+            location /api/ {
+                proxy_pass http://backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 30s;
+                proxy_read_timeout 30s;
+            }
+            
+            # WebSocket support
+            location /ws/ {
+                proxy_pass http://backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Static files
+            location / {
+                root /usr/share/nginx/html;
+                index index.html index.htm;
+                try_files $uri $uri/ /index.html;
+                
+                # Cache static assets
+                location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+                    expires 1y;
+                    add_header Cache-Control "public, immutable";
+                }
+            }
+        }
+    }
+

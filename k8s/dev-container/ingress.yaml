@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dev-container-ingress
+  namespace: dev-environment
+  labels:
+    app.kubernetes.io/name: dev-container
+    app.kubernetes.io/component: development
+    app.kubernetes.io/part-of: infrastructure
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: dev-container.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dev-container
+            port:
+              number: 22
+
+

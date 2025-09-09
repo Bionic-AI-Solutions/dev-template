@@ -1,0 +1,153 @@
+{
+    "name": "dev-pynode",
+    "version": "1.0.0",
+    "description": "AI-powered development platform with Node.js and Python backend",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node dist/index.js",
+        "dev": "nodemon src/index.js",
+        "build": "npm run clean && npm run compile",
+        "compile": "tsc",
+        "clean": "rimraf dist",
+        "test": "npm run test:unit && npm run test:integration",
+        "test:unit": "jest --testPathPattern=tests/unit",
+        "test:integration": "jest --testPathPattern=tests/integratione2e",
+        "test:coverage": "jest --coverage",
+        "test:watch": "jest --watch",
+        "lint": "eslint src/ tests/ --ext .js,.ts",
+        "lint:fix": "eslint src/ tests/ --ext .js,.ts --fix",
+        "format": "prettier --write src/ tests/",
+        "format:check": "prettier --check src/ tests/",
+        "type-check": "tsc --noEmit",
+        "security:audit": "npm audit --audit-level=moderate",
+        "security:fix": "npm audit fix",
+        "docker:build": "docker build -t dev-pynode .",
+        "docker:run": "docker run -p 3000:3000 dev-pynode",
+        "k8s:dev": "kubectl apply -k k8s/overlays/development",
+        "k8s:prod": "kubectl apply -k k8s/overlays/production",
+        "k8s:status": "kubectl get pods -n dev-pynode",
+        "db:migrate": "node scripts/migrate.js",
+        "db:seed": "node scripts/seed.js",
+        "docs:generate": "swagger-jsdoc -d swaggerDef.js src/routes/*.js -o docs/swagger.json",
+        "docs:serve": "swagger-ui-serve docs/swagger.json",
+        "prepare": "husky install",
+        "precommit": "lint-staged"
+    },
+    "keywords": [
+        "ai",
+        "development",
+        "nodejs",
+        "python",
+        "fastapi",
+        "express",
+        "postgresql",
+        "redis",
+        "minio",
+        "kubernetes",
+        "docker"
+    ],
+    "author": "Bionic-AI-Solutions",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=8.0.0"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "helmet": "^7.1.0",
+        "compression": "^1.7.4",
+        "morgan": "^1.10.0",
+        "dotenv": "^16.3.1",
+        "pg": "^8.11.3",
+        "redis": "^4.6.10",
+        "jsonwebtoken": "^9.0.2",
+        "bcryptjs": "^2.4.3",
+        "joi": "^17.11.0",
+        "winston": "^3.11.0",
+        "express-rate-limit": "^7.1.5",
+        "express-validator": "^7.0.1",
+        "multer": "^1.4.5-lts.1",
+        "minio": "^7.1.3",
+        "openai": "^4.20.1",
+        "axios": "^1.6.2",
+        "socket.io": "^4.7.4",
+        "swagger-jsdoc": "^6.2.8",
+        "swagger-ui-express": "^5.0.0",
+        "prom-client": "^15.0.0",
+        "express-prometheus-middleware": "^1.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@types/express": "^4.17.21",
+        "@types/cors": "^2.8.17",
+        "@types/compression": "^1.7.5",
+        "@types/morgan": "^1.9.9",
+        "@types/pg": "^8.10.9",
+        "@types/jsonwebtoken": "^9.0.5",
+        "@types/bcryptjs": "^2.4.6",
+        "@types/multer": "^1.4.11",
+        "@types/swagger-jsdoc": "^6.0.4",
+        "@types/swagger-ui-express": "^4.1.6",
+        "@types/jest": "^29.5.8",
+        "@types/supertest": "^2.0.16",
+        "typescript": "^5.3.2",
+        "ts-node": "^10.9.1",
+        "nodemon": "^3.0.2",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.1.1",
+        "supertest": "^6.3.3",
+        "eslint": "^8.54.0",
+        "@typescript-eslint/eslint-plugin": "^6.12.0",
+        "@typescript-eslint/parser": "^6.12.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.1",
+        "prettier": "^3.1.0",
+        "husky": "^8.0.3",
+        "lint-staged": "^15.1.0",
+        "rimraf": "^5.0.5"
+    },
+    "lint-staged": {
+        "*.{js,ts}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{json,md}": [
+            "prettier --write"
+        ]
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "roots": [
+            "<rootDir>/src",
+            "<rootDir>/tests"
+        ],
+        "testMatch": [
+            "**/__tests__/**/*.ts",
+            "**/?(*.)+(spec|test).ts"
+        ],
+        "collectCoverageFrom": [
+            "src/**/*.ts",
+            "!src/**/*.d.ts",
+            "!src/index.ts"
+        ],
+        "coverageDirectory": "coverage",
+        "coverageReporters": [
+            "text",
+            "lcov",
+            "html"
+        ],
+        "setupFilesAfterEnv": [
+            "<rootDir>/tests/setup.ts"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Bionic-AI-Solutions/dev-pynode.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Bionic-AI-Solutions/dev-pynode/issues"
+    },
+    "homepage": "https://github.com/Bionic-AI-Solutions/dev-pynode#readme"
+}
