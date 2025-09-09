@@ -1,11 +1,9 @@
-# Multi-stage Dockerfile for Bionic-AI-Solutions Project
-# Supports both Node.js and Python backends with frontend
+# =============================================================================
+# Dev-Container Template
+# A development environment with Node.js, Python, and Kubernetes tools
+# =============================================================================
 
-# =============================================================================
-# Base Stage - Common dependencies
-# =============================================================================
 FROM node:18-alpine AS base
-WORKDIR /app
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -14,120 +12,84 @@ RUN apk add --no-cache \
     postgresql-client \
     curl \
     git \
+    openssh-server \
+    kubectl \
+    helm \
+    k9s \
     && rm -rf /var/cache/apk/*
+
+# Create working directory
+WORKDIR /app
 
 # =============================================================================
 # Development Stage
 # =============================================================================
 FROM base AS development
-WORKDIR /app
 
-# Install development dependencies
-RUN apk add --no-cache \
-    build-base \
-    python3-dev \
-    postgresql-dev \
-    && rm -rf /var/cache/apk/*
-
-# Copy package files
-COPY package*.json ./
-COPY requirements*.txt ./
-
-# Install Node.js dependencies
-RUN npm install
-
-# Install frontend dependencies
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
-WORKDIR /app
-
-# Add frontend node_modules to PATH
-ENV PATH="/app/frontend/node_modules/.bin:$PATH"
-
-# Create virtual environment and install Python dependencies
+# Install Python virtual environment
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements-dev.txt
 
-# Copy source code
-COPY . .
+# Install Python development tools
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    pydantic \
+    sqlalchemy \
+    psycopg2-binary \
+    redis \
+    python-dotenv \
+    pytest \
+    black \
+    flake8 \
+    isort
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Install Node.js development tools
+RUN npm install -g \
+    typescript \
+    ts-node \
+    nodemon \
+    eslint \
+    prettier \
+    concurrently
 
-# Change ownership
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+# Create SSH configuration
+RUN mkdir -p /var/run/sshd && \
+    adduser -D -s /bin/bash developer && \
+    echo 'root:dev123' | chpasswd && \
+    echo 'developer:dev123' | chpasswd && \
+    echo 'developer ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# Expose ports
-EXPOSE 3000 3001 8080
+# Configure SSH
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+# Generate SSH host keys
+RUN ssh-keygen -A
 
-# Development command
-CMD ["npm", "run", "dev"]
+# Create startup script
+RUN echo '#!/bin/sh' > /startup.sh && \
+    echo '/usr/sbin/sshd -D &' >> /startup.sh && \
+    echo 'exec "$@"' >> /startup.sh && \
+    chmod +x /startup.sh
 
-# =============================================================================
-# Production Build Stage - Node.js
-# =============================================================================
-FROM base AS nodejs-build
-WORKDIR /app
+# Expose SSH port
+EXPOSE 22
 
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies
-RUN npm install --only=production && npm cache clean --force
-
-# Copy source code
-COPY backend/ ./backend/
-COPY src/ ./src/
-
-# Build application
-RUN npm run build
-
-# =============================================================================
-# Production Build Stage - Python
-# =============================================================================
-FROM base AS python-build
-WORKDIR /app
-
-# Copy requirements
-COPY requirements.txt ./
-
-# Create virtual environment and install Python dependencies
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy source code
-COPY backend/ ./backend/
+# Set startup command
+CMD ["/startup.sh", "tail", "-f", "/dev/null"]
 
 # =============================================================================
-# Production Stage
+# Production Stage (for CI/CD)
 # =============================================================================
 FROM base AS production
-WORKDIR /app
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy built application from appropriate build stage
-COPY --from=nodejs-build --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=nodejs-build --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=nodejs-build --chown=nodejs:nodejs /app/backend ./backend
-
-# Copy Python dependencies if needed
-COPY --from=python-build --chown=nodejs:nodejs /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-
-# Copy configuration files
-COPY --chown=nodejs:nodejs package*.json ./
-COPY --chown=nodejs:nodejs .env.example .env
+# Copy any application files (when used as template)
+COPY --chown=nodejs:nodejs . .
 
 # Switch to non-root user
 USER nodejs
@@ -139,46 +101,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Production command
-CMD ["npm", "start"]
-
-# =============================================================================
-# Frontend Build Stage
-# =============================================================================
-FROM node:18-alpine AS frontend-build
-WORKDIR /app
-
-# Copy frontend package files
-COPY frontend/package*.json ./
-
-    # Install dependencies
-    RUN npm install
-
-# Copy frontend source
-COPY frontend/ ./
-
-# Build frontend
-RUN npm run build
-
-# =============================================================================
-# Frontend Production Stage
-# =============================================================================
-FROM nginx:alpine AS frontend-production
-WORKDIR /usr/share/nginx/html
-
-# Copy built frontend
-COPY --from=frontend-build /app/dist ./
-
-# Copy nginx configuration
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-
-# Expose port
-EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
-
+# Default command
+CMD ["node", "--version"]

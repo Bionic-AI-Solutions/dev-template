@@ -1,26 +1,22 @@
-# Dev-PyNode
+# Dev-Template
 
-A comprehensive AI-powered development platform built with Node.js, Python, and modern containerization technologies.
+A comprehensive development environment template with Node.js, Python, and Kubernetes tools ready for use.
 
 ## 🚀 Features
 
-- **Hybrid Backend**: Node.js and Python services working together
-- **AI Integration**: OpenAI API and local AI models (Ollama)
-- **Modern Stack**: FastAPI, Express.js, PostgreSQL, Redis, MinIO
-- **Containerized**: Full Docker and Kubernetes support
-- **CI/CD Ready**: GitHub Actions pipeline with automated testing and deployment
-- **Monitoring**: Prometheus, Grafana, and comprehensive logging
-- **Security**: JWT authentication, rate limiting, and security scanning
-- **SSH Server**: Remote access for development and debugging
-- **Kubernetes Tools**: kubectl, Helm, and k9s for cluster management
+- **Node.js 18+** with TypeScript, ESLint, Prettier
+- **Python 3.11+** with FastAPI, SQLAlchemy, pytest
+- **Kubernetes Tools**: kubectl, Helm, k9s
+- **SSH Server** for remote access
+- **Docker & Docker Compose** for containerization
+- **CI/CD Pipeline** with GitHub Actions
+- **Kubernetes Deployment** with ArgoCD integration
 
 ## 📋 Prerequisites
 
 - Docker and Docker Compose
-- Node.js 18+
-- Python 3.11+
-- Kubernetes cluster (for production deployment)
 - Git
+- Kubernetes cluster (for deployment)
 
 ## 🛠️ Quick Start
 
@@ -43,222 +39,128 @@ A comprehensive AI-powered development platform built with Node.js, Python, and 
    docker-compose up -d
    ```
 
-4. **Access the application**
-   - Frontend: http://localhost:3001
-   - Backend API: http://localhost:3000
-   - API Documentation: http://localhost:3000/docs
-   - Grafana Dashboard: http://localhost:3003 (admin/admin123)
-   - pgAdmin: http://localhost:5050
-   - Redis Commander: http://localhost:8081
-   - SSH Access: `ssh developer@localhost -p 2222` (password: developer)
-   - MinIO Console: http://localhost:9001
-   - Grafana: http://localhost:3003 (admin/admin123)
-
-### Production Deployment
-
-1. **Deploy to Kubernetes**
+4. **Access the development container**
    ```bash
-   kubectl apply -k k8s/overlays/production
+   # SSH access
+   ssh developer@localhost -p 2222
+   # Password: dev123
+   
+   # Or direct Docker exec
+   docker exec -it dev-template bash
    ```
 
-2. **Check deployment status**
-   ```bash
-   kubectl get pods -n dev-pynode
-   kubectl get services -n dev-pynode
-   ```
+## 🔧 Available Tools
 
-## 🏗️ Architecture
+### Node.js Development
+- **Node.js 18+** with npm
+- **TypeScript** for type-safe JavaScript
+- **ESLint** for code linting
+- **Prettier** for code formatting
+- **nodemon** for development
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   AI Services   │
-│   (React)       │◄──►│   (Node.js)     │◄──►│   (Ollama)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                       ┌─────────────────┐
-                       │   Data Layer    │
-                       │ PostgreSQL      │
-                       │ Redis           │
-                       │ MinIO           │
-                       └─────────────────┘
-```
+### Python Development
+- **Python 3.11+** with pip
+- **FastAPI** for web APIs
+- **SQLAlchemy** for database ORM
+- **pytest** for testing
+- **Black, Flake8, isort** for code quality
+
+### Kubernetes Tools
+- **kubectl** for cluster management
+- **Helm** for package management
+- **k9s** for cluster monitoring
+
+### Databases & Services
+- **PostgreSQL** (port 5433)
+- **Redis** (port 6380)
+- **MinIO** (port 9000)
+- **Prometheus** (port 9090)
+- **Grafana** (port 3003)
 
 ## 📁 Project Structure
 
 ```
-dev-pynode/
-├── .github/workflows/          # CI/CD pipelines
-├── backend/                    # Backend services
-│   ├── nodejs/                # Node.js API
-│   └── python/                # Python services
-├── frontend/                   # React frontend
-├── k8s/                       # Kubernetes manifests
-│   ├── base/                  # Base configurations
-│   └── overlays/              # Environment-specific configs
-├── docker/                    # Docker configurations
-├── scripts/                   # Utility scripts
-├── tests/                     # Test suites
-│   ├── unit/                  # Unit tests
-│   └── integratione2e/        # Integration tests
-└── docs/                      # Documentation
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Key environment variables (see `.env.example` for complete list):
-
-- `NODE_ENV`: Environment (development/production)
-- `DB_HOST`: PostgreSQL host
-- `REDIS_HOST`: Redis host
-- `MINIO_ENDPOINT`: MinIO endpoint
-- `OPENAI_API_KEY`: OpenAI API key
-- `JWT_SECRET`: JWT signing secret
-
-### AI Models
-
-The application supports both OpenAI API and local AI models:
-
-- **OpenAI**: GPT-4, GPT-3.5-turbo
-- **Local AI**: Ollama with Llama2, CodeLlama, and other models
-
-## 🧪 Testing
-
-### Run Tests
-
-```bash
-# Unit tests
-npm run test:unit
-pytest tests/unit/
-
-# Integration tests
-npm run test:integration
-pytest tests/integratione2e/
-
-# All tests
-npm test
-```
-
-### Test Coverage
-
-```bash
-# Generate coverage report
-npm run test:coverage
-pytest --cov=backend tests/
+dev-template/
+├── .github/workflows/     # CI/CD pipeline
+├── k8s/                   # Kubernetes manifests
+├── docker/                # Docker configurations
+├── docs/                  # Documentation
+├── scripts/               # Helper scripts
+├── docker-compose.yml     # Local development
+├── Dockerfile            # Container definition
+└── README.md             # This file
 ```
 
 ## 🚀 Deployment
 
-### Docker
-
+### Local Development
 ```bash
-# Build image
-docker build -t dev-pynode .
-
-# Run container
-docker run -p 3000:3000 dev-pynode
+docker-compose up -d
 ```
 
-### Kubernetes
-
+### Kubernetes Deployment
 ```bash
-# Development
+# Deploy to development
 kubectl apply -k k8s/overlays/development
 
-# Production
+# Deploy to production
 kubectl apply -k k8s/overlays/production
 ```
 
-### CI/CD
+### CI/CD Pipeline
+The GitHub Actions workflow automatically:
+1. Builds Docker image
+2. Pushes to Docker Hub
+3. Triggers ArgoCD sync for deployment
 
-The project includes a comprehensive GitHub Actions pipeline:
+## 🔐 Access Information
 
-- Code quality checks (ESLint, Prettier, TypeScript)
-- Security scanning (Bandit, npm audit, Trivy)
-- Automated testing (unit, integration, e2e)
-- Docker image building and pushing
-- Kubernetes deployment
-- Performance testing with Lighthouse
+### SSH Access
+- **Host**: localhost
+- **Port**: 2222
+- **User**: developer
+- **Password**: dev123
 
-## 📊 Monitoring
+### Service Ports
+- **SSH**: 2222
+- **Node.js App**: 13000
+- **Python App**: 15000
+- **PostgreSQL**: 5433
+- **Redis**: 6380
+- **MinIO**: 9000
+- **Grafana**: 3003
+- **Prometheus**: 9090
 
-### Metrics
+## 📚 Documentation
 
-- **Prometheus**: Metrics collection
-- **Grafana**: Visualization dashboards
-- **Application**: Custom metrics via `/metrics` endpoint
-
-### Logging
-
-- **Structured logging**: JSON format
-- **Log levels**: DEBUG, INFO, WARN, ERROR
-- **Log rotation**: Automatic with size limits
-
-### Health Checks
-
-- **Liveness**: `/health` endpoint
-- **Readiness**: `/ready` endpoint
-- **Kubernetes**: Automatic health checks
-
-## 🔒 Security
-
-### Authentication
-
-- JWT-based authentication
-- Refresh token support
-- Role-based access control
-
-### Security Features
-
-- Rate limiting
-- CORS configuration
-- Input validation
-- SQL injection prevention
-- XSS protection
-- CSRF protection
-
-### Security Scanning
-
-- **Dependencies**: npm audit, pip-audit
-- **Code**: Bandit, ESLint security rules
-- **Images**: Trivy vulnerability scanning
-- **Infrastructure**: Kubernetes security policies
+- [Installation Guide](docs/installation.md)
+- [Configuration](docs/configuration.md)
+- [Development Guide](docs/development.md)
+- [Docker Deployment](docs/docker-deployment.md)
+- [Kubernetes Deployment](docs/kubernetes-deployment.md)
+- [CI/CD Pipeline](docs/cicd-pipeline.md)
+- [Monitoring](docs/monitoring.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-### Development Guidelines
-
-- Follow the coding standards defined in `.eslintrc.js` and `pyproject.toml`
-- Write tests for new features
-- Update documentation as needed
-- Ensure all CI checks pass
-
-## 📝 License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/Bionic-AI-Solutions/dev-pynode/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Bionic-AI-Solutions/dev-pynode/discussions)
-
-## 🏢 About Bionic-AI-Solutions
-
-This project is part of the Bionic-AI-Solutions ecosystem, providing AI-powered development tools and platforms.
+For support and questions:
+- Create an issue in this repository
+- Check the [troubleshooting guide](docs/troubleshooting.md)
+- Review the [documentation](docs/)
 
 ---
 
-**Built with ❤️ by the Bionic-AI-Solutions team**
-
-=======
-# dev-template
-Dev-PyNode: AI-powered development platform with Node.js and Python backend, Docker containerization, and Kubernetes deployment
->>>>>>> b0b8620301cd9841f3b0f53aa393bb07d26eed11
+**Ready to start developing?** Run `docker-compose up -d` and SSH into your development environment!
