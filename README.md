@@ -168,4 +168,4 @@ For support and questions:
 
 ---
 
-**Ready to start developing?** Run `docker-compose up -d` and SSH into your development environment!
+**Ready to start developing?** Run `docker-compose up -d` and SSH into your development environment!# Trigger ArgoCD test
