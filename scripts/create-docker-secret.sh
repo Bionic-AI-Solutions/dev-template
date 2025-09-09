@@ -18,22 +18,29 @@ SECRET_NAME="docker-registry-secret"
 
 echo "Creating Docker registry secret for namespace: $NAMESPACE"
 
-# Create the secret
-kubectl create secret docker-registry $SECRET_NAME \
-    --docker-server=https://index.docker.io/v1/ \
-    --docker-username=$DOCKERHUB_USERNAME \
-    --docker-password=$DOCKERHUB_TOKEN \
-    --docker-email=$DOCKERHUB_USERNAME@example.com \
-    --namespace=$NAMESPACE \
-    --dry-run=client -o yaml > k8s/base/docker-secret.yaml
+# Create the base64 encoded docker config
+DOCKER_CONFIG=$(echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKERHUB_USERNAME\",\"password\":\"$DOCKERHUB_TOKEN\",\"email\":\"$DOCKERHUB_USERNAME@example.com\",\"auth\":\"$(echo -n "$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN" | base64 -w 0)\"}}}" | base64 -w 0)
 
-echo "Docker registry secret created in k8s/base/docker-secret.yaml"
-echo "You can now apply it with: kubectl apply -f k8s/base/docker-secret.yaml"
+# Update the secret.yaml file
+cat > k8s/base/secret.yaml << EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry-secret
+  namespace: dev-template
+  labels:
+    app: dev-template
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: $DOCKER_CONFIG
+EOF
+
+echo "Docker registry secret updated in k8s/base/secret.yaml"
+echo "The secret now contains the actual Docker Hub credentials"
 echo ""
-echo "Or create it directly with:"
-echo "kubectl create secret docker-registry $SECRET_NAME \\"
-echo "    --docker-server=https://index.docker.io/v1/ \\"
-echo "    --docker-username=$DOCKERHUB_USERNAME \\"
-echo "    --docker-password=$DOCKERHUB_TOKEN \\"
-echo "    --docker-email=$DOCKERHUB_USERNAME@example.com \\"
-echo "    --namespace=$NAMESPACE"
+echo "You can now commit and push this change:"
+echo "git add k8s/base/secret.yaml"
+echo "git commit -m 'Update Docker registry secret with real credentials'"
+echo "git push origin main"
+echo ""
+echo "ArgoCD will automatically sync the updated secret"
