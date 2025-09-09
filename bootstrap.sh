@@ -278,10 +278,10 @@ validate_input() {
     
     # Validate stack
     case "$STACK" in
-        fastapi|nodejs|react|fullstack)
+        fastapi|nodejs|react|fullstack|k8s-base)
             ;;
         *)
-            log_error "Invalid stack. Must be one of: fastapi, nodejs, react, fullstack"
+            log_error "Invalid stack. Must be one of: fastapi, nodejs, react, fullstack, k8s-base"
             exit 1
             ;;
     esac
@@ -473,6 +473,14 @@ install_dependencies() {
     
     cd "$PROJECT_DIR"
     
+    # For k8s-base stack, build minimal Docker image
+    if [ "$STACK" = "k8s-base" ]; then
+        log_info "Building minimal Docker image for k8s-base..."
+        docker build -t "${PROJECT_NAME}" --target development .
+        log_success "Minimal Docker image built for k8s-base"
+        return
+    fi
+    
     # Build Docker images to install dependencies
     if [ -f "docker-compose.yml" ]; then
         log_info "Building Docker images with dependencies..."
@@ -578,6 +586,9 @@ create_initial_files() {
             ;;
         fullstack)
             create_fullstack_structure
+            ;;
+        k8s-base)
+            create_k8s_base_structure
             ;;
     esac
 }
@@ -700,6 +711,50 @@ create_fullstack_structure() {
     log_success "Full-stack structure created"
 }
 
+create_k8s_base_structure() {
+    log_info "Creating k8s-base structure..."
+    
+    # Create minimal directory structure
+    mkdir -p k8s-base/{manifests,scripts}
+    
+    # Create a simple README for the k8s-base setup
+    cat > k8s-base/README.md << 'EOF'
+# K8s-Base Setup
+
+This is a minimal Kubernetes pod setup with SSH access only.
+
+## Features
+- SSH access via NodePort service
+- Minimal container with development tools
+- No database or application services
+- Direct pod access for development
+
+## Usage
+
+### Deploy to Kubernetes
+```bash
+kubectl apply -f k8s-base/manifests/
+```
+
+### SSH Access
+```bash
+# Get the NodePort
+kubectl get svc <project-name>-ssh
+
+# SSH to the pod
+ssh developer@<node-ip> -p <nodeport>
+# Password: dev123
+```
+
+### Cleanup
+```bash
+kubectl delete -f k8s-base/manifests/
+```
+EOF
+    
+    log_success "K8s-base structure created"
+}
+
 run_tests() {
     log_info "Running initial tests in Docker containers..."
     
@@ -739,38 +794,72 @@ handoff_to_user() {
     echo "Project location: $PROJECT_DIR"
     echo "GitHub repository: https://github.com/$GITHUB_ORG/$PROJECT_NAME"
     echo
-    echo "Next steps:"
-    echo "1. Change to the project directory:"
-    echo "   cd $PROJECT_DIR"
-    echo
-    echo "2. GitHub Secrets: ✅ Already configured!"
-    echo "   - DOCKERHUB_USERNAME: Set"
-    echo "   - DOCKERHUB_TOKEN: Set"
-    echo "   - ARGOCD_PASSWORD: Set"
-    echo
-    echo "3. Review and customize the configuration files"
-    echo "4. Update the .env file with your specific settings"
-    echo "5. Start development: docker-compose up -d"
-    echo "6. Access the application at http://localhost:3000"
-    echo
-    echo "Useful commands:"
-    echo "- Start development: docker-compose up -d"
-    echo "- Run tests: docker-compose run --rm app npm test"
-    echo "- Run Python tests: docker-compose run --rm python python -m pytest"
-    echo "- Build images: docker-compose build"
-    echo "- Deploy to K8s: kubectl apply -k k8s/overlays/development"
-    echo
-    echo "CI/CD Pipeline: ✅ Ready to use!"
-    echo "- Push to main branch triggers automatic build and deployment"
-    echo "- Docker images are built and pushed to Docker Hub"
-    echo "- ArgoCD automatically syncs and deploys to Kubernetes"
-    echo "- Monitor deployment at: https://argocd.bionicaisolutions.com"
-    echo "- All secrets are configured and ready"
-    echo
-    echo "Note: All dependencies are installed in Docker containers."
-    echo "No Node.js or Python installation required on the host system."
-    echo
-    echo "Documentation: docs/README.md"
+    
+    # Provide stack-specific instructions
+    if [ "$STACK" = "k8s-base" ]; then
+        echo "Stack: K8s-Base (Minimal Kubernetes pod with SSH access)"
+        echo
+        echo "Next steps:"
+        echo "1. Change to the project directory:"
+        echo "   cd $PROJECT_DIR"
+        echo
+        echo "2. Deploy to Kubernetes:"
+        echo "   ./k8s-base/scripts/deploy.sh"
+        echo
+        echo "3. SSH Access:"
+        echo "   - Username: developer"
+        echo "   - Password: dev123"
+        echo "   - Port: 30022 (NodePort)"
+        echo
+        echo "Useful commands:"
+        echo "- Deploy: ./k8s-base/scripts/deploy.sh"
+        echo "- Check pods: kubectl get pods -n $PROJECT_NAME"
+        echo "- Check service: kubectl get svc -n $PROJECT_NAME"
+        echo "- SSH access: ssh developer@<node-ip> -p 30022"
+        echo "- Cleanup: kubectl delete -k k8s-base/manifests/"
+        echo
+        echo "CI/CD Pipeline: ✅ Ready to use!"
+        echo "- Push to main branch triggers automatic build and deployment"
+        echo "- Docker images are built and pushed to Docker Hub"
+        echo "- ArgoCD automatically syncs and deploys to Kubernetes"
+        echo "- Monitor deployment at: https://argocd.bionicaisolutions.com"
+        echo
+        echo "Documentation: k8s-base/README.md"
+    else
+        echo "Next steps:"
+        echo "1. Change to the project directory:"
+        echo "   cd $PROJECT_DIR"
+        echo
+        echo "2. GitHub Secrets: ✅ Already configured!"
+        echo "   - DOCKERHUB_USERNAME: Set"
+        echo "   - DOCKERHUB_TOKEN: Set"
+        echo "   - ARGOCD_PASSWORD: Set"
+        echo
+        echo "3. Review and customize the configuration files"
+        echo "4. Update the .env file with your specific settings"
+        echo "5. Start development: docker-compose up -d"
+        echo "6. Access the application at http://localhost:3000"
+        echo
+        echo "Useful commands:"
+        echo "- Start development: docker-compose up -d"
+        echo "- Run tests: docker-compose run --rm app npm test"
+        echo "- Run Python tests: docker-compose run --rm python python -m pytest"
+        echo "- Build images: docker-compose build"
+        echo "- Deploy to K8s: kubectl apply -k k8s/overlays/development"
+        echo
+        echo "CI/CD Pipeline: ✅ Ready to use!"
+        echo "- Push to main branch triggers automatic build and deployment"
+        echo "- Docker images are built and pushed to Docker Hub"
+        echo "- ArgoCD automatically syncs and deploys to Kubernetes"
+        echo "- Monitor deployment at: https://argocd.bionicaisolutions.com"
+        echo "- All secrets are configured and ready"
+        echo
+        echo "Note: All dependencies are installed in Docker containers."
+        echo "No Node.js or Python installation required on the host system."
+        echo
+        echo "Documentation: docs/README.md"
+    fi
+    
     echo
     echo "=========================================="
     echo "  Ready to start development!"
@@ -813,12 +902,20 @@ main() {
                 echo
                 echo "Options:"
                 echo "  -n, --name        Project name (kebab-case)"
-                echo "  -s, --stack       Stack (fastapi|nodejs|react|fullstack)"
+                echo "  -s, --stack       Stack (fastapi|nodejs|react|fullstack|k8s-base)"
                 echo "  -d, --description Project description"
                 echo "  -h, --help        Show this help message"
                 echo
+                echo "Stack Options:"
+                echo "  fastapi    - Python FastAPI backend"
+                echo "  nodejs     - Node.js Express backend"
+                echo "  react      - React frontend"
+                echo "  fullstack  - Node.js + React full-stack"
+                echo "  k8s-base   - Minimal Kubernetes pod with SSH access only"
+                echo
                 echo "Example:"
                 echo "  $0 -n my-awesome-project -s fullstack -d 'My awesome project'"
+                echo "  $0 -n my-dev-pod -s k8s-base -d 'Development pod with SSH access'"
                 exit 0
                 ;;
             *)
