@@ -128,7 +128,7 @@ RUN echo '#!/bin/sh' > /startup.sh && \
     chmod +x /startup.sh
 
 # Expose ports
-EXPOSE 22 3000
+EXPOSE 22 3000 8000
 
 # Set startup command
 CMD ["/startup.sh"]

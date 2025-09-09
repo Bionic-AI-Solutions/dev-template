@@ -15,6 +15,8 @@ spec:
       labels:
         app: dev-template
     spec:
+      imagePullSecrets:
+      - name: docker-registry-secret
       containers:
       - name: dev-template
         image: docker4zerocool/dev-template:latest
@@ -23,7 +25,9 @@ spec:
         - containerPort: 22
           name: ssh
         - containerPort: 3000
-          name: http
+          name: frontend
+        - containerPort: 8000
+          name: fastapi
         env:
         - name: NODE_ENV
           value: "production"

@@ -118,18 +118,24 @@ The GitHub Actions workflow automatically:
 - `DOCKERHUB_TOKEN`: Your Docker Hub access token
 - `ARGOCD_PASSWORD`: ArgoCD admin password for argocd.bionicaisolutions.com
 
+**Required Kubernetes Setup:**
+- Docker registry secret for pulling images from Docker Hub
+- Use the provided script: `./scripts/create-docker-secret.sh <username> <token>`
+
 ## 🔐 Access Information
 
-### SSH Access
+### Access Information
+
+#### SSH Access
 - **Host**: localhost
 - **Port**: 2222
 - **User**: developer
 - **Password**: dev123
 
-### Service Ports
-- **SSH**: 2222
-- **Node.js App**: 13000
-- **Python App**: 15000
+#### Application Ports
+- **SSH**: Port 22 (for remote development access)
+- **Frontend**: Port 3000 (React/Node.js frontend)
+- **FastAPI**: Port 8000 (Python backend API)
 - **PostgreSQL**: 5433
 - **Redis**: 6380
 - **MinIO**: 9000
