@@ -33,10 +33,10 @@ jobs:
     - name: Run code quality checks
       run: |
         # Run Node.js linting
-        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test npm run lint:frontend
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test sh -c "cd frontend && npm run lint"
         
         # Run Python linting
-        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test bash -c "
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test sh -c "
           cd backend && 
           flake8 . && 
           black --check . && 
@@ -49,7 +49,7 @@ jobs:
         docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test npm audit --audit-level=moderate > npm-audit.json || true
         
         # Python security audit
-        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test bash -c "
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test sh -c "
           cd backend && 
           bandit -r . -f json -o bandit-report.json || true
         "
@@ -97,14 +97,14 @@ jobs:
           -e ENV=test \
           -e DB_HOST=test-postgres \
           -e REDIS_HOST=test-redis \
-          dev-pynode-test bash -c "
+          dev-pynode-test sh -c "
             cd backend && 
             python -m pytest tests/unit/ -v --cov=. --cov-report=xml
           "
         
         # Run frontend unit tests
         docker run --rm -v $(pwd):/workspace -w /workspace \
-          dev-pynode-test bash -c "
+          dev-pynode-test sh -c "
             cd frontend && 
             npm run test:run
           "
@@ -117,7 +117,7 @@ jobs:
           -e ENV=test \
           -e DB_HOST=test-postgres \
           -e REDIS_HOST=test-redis \
-          dev-pynode-test bash -c "
+          dev-pynode-test sh -c "
             cd backend && 
             python -m pytest tests/integratione2e/ -v
           "

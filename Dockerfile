@@ -36,6 +36,15 @@ COPY requirements*.txt ./
 # Install Node.js dependencies
 RUN npm install
 
+# Install frontend dependencies
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+WORKDIR /app
+
+# Add frontend node_modules to PATH
+ENV PATH="/app/frontend/node_modules/.bin:$PATH"
+
 # Create virtual environment and install Python dependencies
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
