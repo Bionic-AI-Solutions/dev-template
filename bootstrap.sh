@@ -237,8 +237,12 @@ customize_project() {
     if [ -f "docker-compose.yml" ]; then
         log_info "Fixing network names in docker-compose.yml..."
         # Replace all network references with consistent naming
+        # First, replace any existing project-specific network names with the standard one
         sed -i "s/${PROJECT_NAME}-network/${PROJECT_NAME}-network/g" docker-compose.yml
+        # Then replace the template network name with the project network name
         sed -i "s/dev-template-network/${PROJECT_NAME}-network/g" docker-compose.yml
+        # Ensure all services use the same network name
+        sed -i "s/- ${PROJECT_NAME}-new-network/- ${PROJECT_NAME}-network/g" docker-compose.yml
     fi
     
     # Update .env.example to .env

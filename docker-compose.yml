@@ -85,7 +85,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     networks:
-      - rippal-new-network
+      - dev-template-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d dev_pynode_db"]
@@ -129,7 +129,7 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - rippal-new-network
+      - dev-template-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -243,7 +243,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
-      - rippal-new-network
+      - dev-template-network
     restart: unless-stopped
     depends_on:
       - prometheus
