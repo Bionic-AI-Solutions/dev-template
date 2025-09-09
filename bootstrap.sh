@@ -42,7 +42,7 @@ log_error() {
 }
 
 check_dependencies() {
-    log_info "Checking dependencies..."
+    log_info "Checking host dependencies..."
     
     local missing_deps=()
     
@@ -54,25 +54,21 @@ check_dependencies() {
         missing_deps+=("docker-compose")
     fi
     
-    if ! command -v node &> /dev/null; then
-        missing_deps+=("node")
-    fi
-    
-    if ! command -v python3 &> /dev/null; then
-        missing_deps+=("python3")
-    fi
-    
     if ! command -v git &> /dev/null; then
         missing_deps+=("git")
     fi
     
+    # Note: Node.js and Python are not required on host as they run in Docker containers
+    
     if [ ${#missing_deps[@]} -ne 0 ]; then
-        log_error "Missing dependencies: ${missing_deps[*]}"
+        log_error "Missing host dependencies: ${missing_deps[*]}"
         log_info "Please install the missing dependencies and try again."
+        log_info "Note: Node.js and Python will be installed in Docker containers, not on the host."
         exit 1
     fi
     
-    log_success "All dependencies are installed"
+    log_success "All required host dependencies are installed"
+    log_info "Node.js and Python will run in Docker containers"
 }
 
 validate_input() {
@@ -224,24 +220,48 @@ setup_documentation() {
 }
 
 install_dependencies() {
-    log_info "Installing dependencies..."
+    log_info "Installing dependencies in Docker containers..."
     
-    # Install Node.js dependencies
-    if [ -f "package.json" ]; then
-        npm install
-        log_success "Node.js dependencies installed"
+    # Build Docker images to install dependencies
+    if [ -f "docker-compose.yml" ]; then
+        log_info "Building Docker images with dependencies..."
+        docker-compose build --no-cache
+        log_success "Docker images built with dependencies"
+    else
+        log_warning "docker-compose.yml not found, skipping dependency installation"
     fi
     
-    # Install Python dependencies
-    if [ -f "requirements.txt" ]; then
-        pip3 install -r requirements.txt
-        log_success "Python dependencies installed"
+    # For Node.js projects, also build frontend if it exists
+    if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+        log_info "Building frontend Docker image..."
+        if [ -f "frontend/Dockerfile" ]; then
+            docker build -t "${PROJECT_NAME}-frontend" ./frontend
+            log_success "Frontend Docker image built"
+        else
+            log_warning "Frontend Dockerfile not found, skipping frontend build"
+        fi
     fi
     
-    # Install development dependencies
-    if [ -f "requirements-dev.txt" ]; then
-        pip3 install -r requirements-dev.txt
-        log_success "Python development dependencies installed"
+    # For Python projects, also build backend if it exists
+    if [ -d "backend/python" ] && [ -f "backend/python/requirements.txt" ]; then
+        log_info "Building Python backend Docker image..."
+        if [ -f "backend/python/Dockerfile" ]; then
+            docker build -t "${PROJECT_NAME}-python" ./backend/python
+            log_success "Python backend Docker image built"
+        else
+            log_warning "Python backend Dockerfile not found, skipping Python build"
+        fi
+    fi
+    
+    # For Node.js backend projects
+    if [ -d "backend/nodejs" ] && [ -f "backend/nodejs/package.json" ]; then
+        log_info "Building Node.js backend Docker image..."
+        if [ -f "backend/nodejs/Dockerfile" ]; then
+            docker build -t "${PROJECT_NAME}-nodejs" ./backend/nodejs
+            log_success "Node.js backend Docker image built"
+        else
+            log_warning "Node.js backend Dockerfile not found, skipping Node.js build"
+        fi
     fi
 }
 
@@ -275,9 +295,10 @@ Description: $DESCRIPTION"
 setup_hooks() {
     log_info "Setting up Git hooks..."
     
-    # Install husky if package.json exists
+    # Install husky if package.json exists - use Docker to avoid host installation
     if [ -f "package.json" ] && grep -q "husky" package.json; then
-        npm run prepare
+        log_info "Installing Git hooks using Docker..."
+        docker run --rm -v "$(pwd):/app" -w /app node:18 npm run prepare || log_warning "Git hooks installation failed, but continuing..."
         log_success "Git hooks installed"
     fi
 }
@@ -421,11 +442,27 @@ create_fullstack_structure() {
 }
 
 run_tests() {
-    log_info "Running initial tests..."
+    log_info "Running initial tests in Docker containers..."
     
-    # Run tests if they exist
-    if [ -f "package.json" ] && grep -q "test" package.json; then
-        npm test || log_warning "Tests failed, but continuing..."
+    # Run tests in Docker containers if they exist
+    if [ -f "docker-compose.yml" ]; then
+        log_info "Running tests in Docker containers..."
+        docker-compose run --rm app npm test || log_warning "Tests failed, but continuing..."
+        log_success "Docker container tests completed"
+    else
+        log_warning "docker-compose.yml not found, skipping tests"
+    fi
+    
+    # For frontend tests
+    if [ -d "frontend" ] && [ -f "frontend/package.json" ] && grep -q "test" frontend/package.json; then
+        log_info "Running frontend tests..."
+        docker run --rm -v "$(pwd)/frontend:/app" -w /app node:18 npm test || log_warning "Frontend tests failed, but continuing..."
+    fi
+    
+    # For Python tests
+    if [ -d "backend/python" ] && [ -f "backend/python/requirements.txt" ]; then
+        log_info "Running Python tests..."
+        docker run --rm -v "$(pwd)/backend/python:/app" -w /app python:3.11 pip install -r requirements.txt && python -m pytest || log_warning "Python tests failed, but continuing..."
     fi
     
     log_success "Initial tests completed"
@@ -442,8 +479,13 @@ show_completion_message() {
     echo
     echo "Useful commands:"
     echo "- Start development: docker-compose up -d"
-    echo "- Run tests: npm test"
+    echo "- Run tests: docker-compose run --rm app npm test"
+    echo "- Run Python tests: docker-compose run --rm python python -m pytest"
+    echo "- Build images: docker-compose build"
     echo "- Deploy to K8s: kubectl apply -k k8s/overlays/development"
+    echo
+    echo "Note: All dependencies are installed in Docker containers."
+    echo "No Node.js or Python installation required on the host system."
     echo
     echo "Documentation: docs/README.md"
     echo "GitHub repository: https://github.com/$GITHUB_ORG/$PROJECT_NAME"
