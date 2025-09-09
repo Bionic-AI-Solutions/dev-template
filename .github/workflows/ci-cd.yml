@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE: bionic-ai-solutions/dev-template
+  DOCKER_IMAGE: docker4zerocool/dev-template
   DOCKER_TAG: ${{ github.sha }}
 
 jobs:
