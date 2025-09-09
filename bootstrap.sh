@@ -494,11 +494,15 @@ handoff_to_user() {
     echo "   cd $PROJECT_DIR"
     echo
     echo "2. Configure GitHub Secrets (required for CI/CD):"
+    echo "   Option A - Use helper script (recommended):"
+    echo "   ./scripts/setup-github-secrets.sh -n $PROJECT_NAME"
+    echo
+    echo "   Option B - Manual setup:"
     echo "   Go to: https://github.com/$GITHUB_ORG/$PROJECT_NAME/settings/secrets/actions"
     echo "   Add these secrets:"
     echo "   - DOCKERHUB_USERNAME: Your Docker Hub username"
-    echo "   - DOCKERHUB_TOKEN: Your Docker Hub access token"
-    echo "   - ARGOCD_PASSWORD: ArgoCD admin password"
+    echo "   - DOCKERHUB_TOKEN: Your Docker Hub access token (create at hub.docker.com)"
+    echo "   - ARGOCD_PASSWORD: ArgoCD admin password (get with kubectl command)"
     echo
     echo "3. Review and customize the configuration files"
     echo "4. Update the .env file with your specific settings"
