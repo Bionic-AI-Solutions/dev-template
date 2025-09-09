@@ -80,6 +80,46 @@ EXPOSE 22
 CMD ["/startup.sh", "tail", "-f", "/dev/null"]
 
 # =============================================================================
+# Frontend Build Stage
+# =============================================================================
+FROM base AS frontend-build
+
+# Install Node.js development tools
+RUN npm install -g \
+    typescript \
+    ts-node \
+    nodemon \
+    eslint \
+    prettier \
+    concurrently
+
+# Create SSH configuration
+RUN mkdir -p /var/run/sshd && \
+    adduser -D -s /bin/bash developer && \
+    echo 'root:dev123' | chpasswd && \
+    echo 'developer:dev123' | chpasswd && \
+    echo 'developer ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Configure SSH
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Generate SSH host keys
+RUN ssh-keygen -A
+
+# Create startup script
+RUN echo '#!/bin/sh' > /startup.sh && \
+    echo '/usr/sbin/sshd -D &' >> /startup.sh && \
+    echo 'exec "$@"' >> /startup.sh && \
+    chmod +x /startup.sh
+
+# Expose ports
+EXPOSE 22 80
+
+# Set startup command
+CMD ["/startup.sh", "tail", "-f", "/dev/null"]
+
+# =============================================================================
 # Production Stage (for CI/CD)
 # =============================================================================
 FROM base AS production
