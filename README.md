@@ -124,8 +124,6 @@ The GitHub Actions workflow automatically:
 
 ## 🔐 Access Information
 
-### Access Information
-
 #### SSH Access
 - **Host**: localhost
 - **Port**: 2222
