@@ -36,8 +36,10 @@ COPY requirements*.txt ./
 # Install Node.js dependencies
 RUN npm install
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements-dev.txt
+# Create virtual environment and install Python dependencies
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 # Copy source code
 COPY . .
@@ -88,8 +90,10 @@ WORKDIR /app
 # Copy requirements
 COPY requirements.txt ./
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Create virtual environment and install Python dependencies
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
 COPY backend/ ./backend/
