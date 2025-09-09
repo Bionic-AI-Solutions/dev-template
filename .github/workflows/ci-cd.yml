@@ -47,8 +47,74 @@ jobs:
         echo "Image built and pushed: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
         echo "ArgoCD should automatically sync this new image tag"
 
-    - name: Trigger ArgoCD Sync
+    - name: Set up kubectl
+      if: github.ref == 'refs/heads/main'
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Configure kubectl for ArgoCD
       if: github.ref == 'refs/heads/main'
       run: |
-        # This would typically trigger ArgoCD sync via API or webhook
-        echo "ArgoCD sync should be triggered for image: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
+        # Create kubeconfig from secret
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+        
+        # Verify connection
+        kubectl cluster-info
+        
+        # Get ArgoCD server details
+        ARGOCD_SERVER=$(kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        if [ -z "$ARGOCD_SERVER" ]; then
+          ARGOCD_SERVER=$(kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        if [ -z "$ARGOCD_SERVER" ]; then
+          ARGOCD_SERVER="argocd-server.argocd.svc.cluster.local"
+        fi
+        
+        echo "ARGOCD_SERVER=$ARGOCD_SERVER" >> $GITHUB_ENV
+        echo "ARGOCD_PORT=443" >> $GITHUB_ENV
+
+    - name: Get ArgoCD Admin Password
+      if: github.ref == 'refs/heads/main'
+      run: |
+        export KUBECONFIG=kubeconfig
+        ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+        echo "ARGOCD_PASSWORD=$ARGOCD_PASSWORD" >> $GITHUB_ENV
+
+    - name: Install ArgoCD CLI
+      if: github.ref == 'refs/heads/main'
+      run: |
+        curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+        rm argocd-linux-amd64
+
+    - name: Login to ArgoCD and Sync Application
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Login to ArgoCD
+        argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_PASSWORD --insecure
+        
+        # Check if application exists
+        if argocd app get dev-template >/dev/null 2>&1; then
+          echo "Application dev-template exists, syncing..."
+          argocd app sync dev-template --force
+          
+          # Wait for sync to complete
+          argocd app wait dev-template --health --timeout 300
+          
+          echo "ArgoCD sync completed successfully"
+        else
+          echo "Application dev-template not found, creating..."
+          # Create the application if it doesn't exist
+          argocd app create dev-template \
+            --repo https://github.com/Bionic-AI-Solutions/dev-template.git \
+            --path k8s/overlays/production \
+            --dest-server https://kubernetes.default.svc \
+            --dest-namespace default \
+            --sync-policy automated \
+            --auto-prune \
+            --self-heal
+          
+          echo "ArgoCD application created and synced"
+        fi

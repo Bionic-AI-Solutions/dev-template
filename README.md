@@ -113,6 +113,11 @@ The GitHub Actions workflow automatically:
 2. Pushes to Docker Hub
 3. Triggers ArgoCD sync for deployment
 
+**Required GitHub Secrets:**
+- `DOCKERHUB_USERNAME`: Your Docker Hub username
+- `DOCKERHUB_TOKEN`: Your Docker Hub access token
+- `KUBECONFIG`: Base64 encoded kubeconfig file for cluster access
+
 ## 🔐 Access Information
 
 ### SSH Access
