@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: rippal-ingress
-  namespace: rippal
+  name: dev-template-ingress
+  namespace: dev-template
   labels:
-    app: rippal
+    app: dev-template
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -16,30 +16,30 @@ metadata:
 spec:
   tls:
   - hosts:
-    - rippal.zippio.ai
-    secretName: rippal-tls
+    - dev-template.zippio.ai
+    secretName: dev-template-tls
   rules:
-  - host: rippal.zippio.ai
+  - host: dev-template.zippio.ai
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: rippal-service
+            name: dev-template-service
             port:
               number: 3000
       - path: /api
         pathType: Prefix
         backend:
           service:
-            name: rippal-service
+            name: dev-template-service
             port:
               number: 8000
       - path: /ws
         pathType: Prefix
         backend:
           service:
-            name: rippal-service
+            name: dev-template-service
             port:
               number: 8000

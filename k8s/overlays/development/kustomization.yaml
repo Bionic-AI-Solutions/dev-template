@@ -2,11 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: rippal-new-development
+  name: dev-template-development
   annotations:
-    description: "Development environment configuration for rippal-new"
+    description: "Development environment configuration for dev-template"
 
-namespace: rippal-new
+namespace: dev-template
 
 resources:
   - ../../base
@@ -20,24 +20,24 @@ patchesJson6902:
       group: apps
       version: v1
       kind: Deployment
-      name: rippal-new
+      name: dev-template
     path: deployment-patch.json
 
 images:
-  - name: bionic-ai-solutions/rippal-new
+  - name: docker4zerocool/dev-template
     newTag: dev-latest
 
 replicas:
-  - name: rippal-new
+  - name: dev-template
     count: 1
-  - name: rippal-new-frontend
+  - name: dev-template-frontend
     count: 1
 
 commonLabels:
   environment: development
 
 configMapGenerator:
-  - name: rippal-new-config
+  - name: dev-template-config
     behavior: merge
     literals:
       - NODE_ENV=development

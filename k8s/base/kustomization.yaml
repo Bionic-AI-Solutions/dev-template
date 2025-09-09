@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: rippal-base
+  name: dev-template-base
 
 resources:
   - namespace.yaml
@@ -14,9 +14,9 @@ resources:
   - secret.yaml
 
 commonLabels:
-  app: rippal
+  app: dev-template
   version: v1.0.0
 
 images:
-  - name: docker4zerocool/rippal
+  - name: docker4zerocool/dev-template
     newTag: latest

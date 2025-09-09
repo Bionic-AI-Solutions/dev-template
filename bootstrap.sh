@@ -193,6 +193,7 @@ setup_kubernetes() {
     # Update k8s manifests
     find k8s/ -name "*.yaml" -exec sed -i "s/dev-pynode/$PROJECT_NAME/g" {} \;
     find k8s/ -name "*.yaml" -exec sed -i "s/dev_pynode_db/${PROJECT_NAME//-/_}_db/g" {} \;
+    find k8s/ -name "*.yaml" -exec sed -i "s/dev_template/${PROJECT_NAME//-/_}_db/g" {} \;
     
     log_success "Kubernetes manifests updated"
 }

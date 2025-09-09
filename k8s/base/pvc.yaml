@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: rippal-pvc
-  namespace: rippal
+  name: dev-template-pvc
+  namespace: dev-template
   labels:
-    app: rippal
+    app: dev-template
 spec:
   accessModes:
     - ReadWriteMany

@@ -1,14 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: rippal-new-network-policy
-  namespace: rippal-new
+  name:   dev-template-network-policy
+  namespace: dev-template
   labels:
-    app: rippal-new
+    app: dev-template
 spec:
   podSelector:
     matchLabels:
-      app: rippal-new
+      app: dev-template
   policyTypes:
   - Ingress
   - Egress
@@ -19,7 +19,7 @@ spec:
           name: ingress-nginx
     - podSelector:
         matchLabels:
-          app: rippal-new
+          app: dev-template
     ports:
     - protocol: TCP
       port: 3000

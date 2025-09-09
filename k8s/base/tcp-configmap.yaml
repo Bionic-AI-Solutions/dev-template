@@ -4,6 +4,6 @@ metadata:
   name: tcp-services
   namespace: ingress-nginx
   labels:
-    app: rippal
+    app: dev-template
 data:
-  "2222": "rippal/rippal-ssh-service:22"
+  "2222": "dev-template/dev-template-ssh-service:22"

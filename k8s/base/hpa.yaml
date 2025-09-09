@@ -1,15 +1,15 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: rippal-new-hpa
-  namespace: rippal-new
+  name: dev-template-hpa
+  namespace: dev-template
   labels:
-    app: rippal-new
+    app: dev-template
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: rippal-new
+    name: dev-template
   minReplicas: 2
   maxReplicas: 10
   metrics:
@@ -46,16 +46,16 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: rippal-new-frontend-hpa
-  namespace: rippal-new
+  name: dev-template-frontend-hpa
+  namespace: dev-template
   labels:
-    app: rippal-new
+    app: dev-template
     component: frontend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: rippal-new-frontend
+    name: dev-template-frontend
   minReplicas: 2
   maxReplicas: 5
   metrics:
