@@ -133,7 +133,7 @@ spec:
     spec:
       containers:
       - name: dev-pynode
-        image: bionic-ai-solutions/dev-pynode:latest
+        image: docker4zerocool/dev-pynode:latest
         ports:
         - containerPort: 3000
         env:

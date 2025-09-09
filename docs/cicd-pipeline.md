@@ -57,7 +57,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: bionic-ai-solutions/dev-pynode
+  IMAGE_NAME: docker4zerocool/dev-pynode
   K8S_NAMESPACE: dev-pynode
 
 jobs:
@@ -487,7 +487,7 @@ spec:
     - name: Update ArgoCD
       run: |
         # Update image tag in k8s manifests
-        sed -i "s|image: bionic-ai-solutions/dev-pynode:.*|image: bionic-ai-solutions/dev-pynode:${{ needs.build.outputs.image-tag }}|g" k8s/overlays/production/kustomization.yaml
+        sed -i "s|image: docker4zerocool/dev-pynode:.*|image: docker4zerocool/dev-pynode:${{ needs.build.outputs.image-tag }}|g" k8s/overlays/production/kustomization.yaml
         
         # Commit and push changes
         git config --local user.email "action@github.com"

@@ -541,7 +541,7 @@ resources:
 kubectl describe pod <pod-name> -n dev-pynode | grep -i image
 
 # Pull image manually
-docker pull bionic-ai-solutions/dev-pynode:latest
+docker pull docker4zerocool/dev-pynode:latest
 ```
 
 ### 2. Service Not Accessible

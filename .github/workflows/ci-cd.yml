@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE: docker4zerocool/${{ github.repository_owner }}-${{ github.event.repository.name }}
+  DOCKER_IMAGE: docker4zerocool/${{ github.event.repository.name }}
   DOCKER_TAG: ${{ github.sha }}
 
 jobs:
