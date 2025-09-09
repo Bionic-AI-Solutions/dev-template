@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dev-PyNode
 
 A comprehensive AI-powered development platform built with Node.js, Python, and modern containerization technologies.
@@ -254,3 +255,7 @@ This project is part of the Bionic-AI-Solutions ecosystem, providing AI-powered 
 
 **Built with ❤️ by the Bionic-AI-Solutions team**
 
+=======
+# dev-template
+Dev-PyNode: AI-powered development platform with Node.js and Python backend, Docker containerization, and Kubernetes deployment
+>>>>>>> b0b8620301cd9841f3b0f53aa393bb07d26eed11
