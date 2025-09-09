@@ -26,42 +26,33 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
+    - name: Build Docker image for testing
       run: |
-        npm ci
-        pip install -r requirements-dev.txt
+        docker build -t dev-pynode-test --target development .
 
-    - name: Run ESLint
-      run: npm run lint
-
-    - name: Run Prettier check
-      run: npm run format:check
-
-    - name: Run TypeScript check
-      run: npm run type-check
-
-    - name: Run Python linting
+    - name: Run code quality checks
       run: |
-        flake8 backend/
-        black --check backend/
-        isort --check-only backend/
+        # Run Node.js linting
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test npm run lint:frontend
+        
+        # Run Python linting
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test bash -c "
+          cd backend && 
+          flake8 . && 
+          black --check . && 
+          isort --check-only .
+        "
 
-    - name: Run security audit (Node.js)
-      run: npm audit --audit-level=moderate
-
-    - name: Run security audit (Python)
-      run: bandit -r backend/ -f json -o bandit-report.json
+    - name: Run security audits
+      run: |
+        # Node.js security audit
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test npm audit --audit-level=moderate > npm-audit.json || true
+        
+        # Python security audit
+        docker run --rm -v $(pwd):/workspace -w /workspace dev-pynode-test bash -c "
+          cd backend && 
+          bandit -r . -f json -o bandit-report.json || true
+        "
 
     - name: Upload security reports
       uses: actions/upload-artifact@v4
@@ -77,74 +68,71 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
+    - name: Build Docker image for testing
       run: |
-        npm ci
-        pip install -r requirements-dev.txt
+        docker build -t dev-pynode-test --target development .
 
-    - name: Run unit tests (Node.js)
-      run: npm run test:unit
-      env:
-        NODE_ENV: test
-        TEST_DB_NAME: test_db
-        TEST_REDIS_DB: 1
+    - name: Start test services
+      run: |
+        docker network create test-network || true
+        docker run -d --name test-postgres --network test-network \
+          -e POSTGRES_PASSWORD=postgres \
+          -e POSTGRES_DB=test_db \
+          postgres:15
+        docker run -d --name test-redis --network test-network \
+          redis:7
+        
+        # Wait for services to be ready
+        sleep 10
 
-    - name: Run unit tests (Python)
-      run: pytest tests/unit/ -v --cov=backend --cov-report=xml
-      env:
-        ENV: test
+    - name: Run unit tests
+      run: |
+        # Run Python unit tests
+        docker run --rm --network test-network \
+          -v $(pwd):/workspace -w /workspace \
+          -e ENV=test \
+          -e DB_HOST=test-postgres \
+          -e REDIS_HOST=test-redis \
+          dev-pynode-test bash -c "
+            cd backend && 
+            python -m pytest tests/unit/ -v --cov=. --cov-report=xml
+          "
+        
+        # Run frontend unit tests
+        docker run --rm -v $(pwd):/workspace -w /workspace \
+          dev-pynode-test bash -c "
+            cd frontend && 
+            npm run test:run
+          "
 
     - name: Run integration tests
       run: |
-        npm run test:integration
-        pytest tests/integratione2e/ -v
-      env:
-        NODE_ENV: test
-        ENV: test
+        # Run Python integration tests
+        docker run --rm --network test-network \
+          -v $(pwd):/workspace -w /workspace \
+          -e ENV=test \
+          -e DB_HOST=test-postgres \
+          -e REDIS_HOST=test-redis \
+          dev-pynode-test bash -c "
+            cd backend && 
+            python -m pytest tests/integratione2e/ -v
+          "
+
+    - name: Cleanup test services
+      if: always()
+      run: |
+        docker stop test-postgres test-redis || true
+        docker rm test-postgres test-redis || true
+        docker network rm test-network || true
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
-        file: ./coverage.xml
+        file: ./backend/coverage.xml
         flags: unittests
         name: codecov-umbrella
 

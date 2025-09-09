@@ -34,7 +34,7 @@ COPY package*.json ./
 COPY requirements*.txt ./
 
 # Install Node.js dependencies
-RUN npm ci --only=development
+RUN npm install
 
 # Install Python dependencies
 RUN pip3 install --no-cache-dir -r requirements-dev.txt
@@ -70,7 +70,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Copy source code
 COPY backend/ ./backend/
