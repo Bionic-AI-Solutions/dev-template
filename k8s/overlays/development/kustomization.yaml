@@ -2,11 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: dev-pynode-development
+  name: rippal-new-development
   annotations:
-    description: "Development environment configuration for dev-pynode"
+    description: "Development environment configuration for rippal-new"
 
-namespace: dev-pynode
+namespace: rippal-new
 
 resources:
   - ../../base
@@ -20,24 +20,24 @@ patchesJson6902:
       group: apps
       version: v1
       kind: Deployment
-      name: dev-pynode
+      name: rippal-new
     path: deployment-patch.json
 
 images:
-  - name: bionic-ai-solutions/dev-pynode
+  - name: bionic-ai-solutions/rippal-new
     newTag: dev-latest
 
 replicas:
-  - name: dev-pynode
+  - name: rippal-new
     count: 1
-  - name: dev-pynode-frontend
+  - name: rippal-new-frontend
     count: 1
 
 commonLabels:
   environment: development
 
 configMapGenerator:
-  - name: dev-pynode-config
+  - name: rippal-new-config
     behavior: merge
     literals:
       - NODE_ENV=development

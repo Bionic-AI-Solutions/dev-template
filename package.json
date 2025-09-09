@@ -1,7 +1,7 @@
 {
-  "name": "dev-template",
+  "name": "rippal",
   "version": "1.0.0",
-  "description": "Development environment template with Node.js, Python, and Kubernetes tools",
+  "description": "Rippal application with SSH and web access",
   "main": "index.js",
   "scripts": {
     "dev": "echo 'Development environment ready. Use docker-compose up -d to start services.'",
@@ -10,7 +10,7 @@
     "test": "echo 'No tests configured yet'",
     "lint": "echo 'Linting not configured yet'",
     "format": "echo 'Formatting not configured yet'",
-    "docker:build": "docker build -t dev-template .",
+    "docker:build": "docker build -t rippal .",
     "docker:run": "docker-compose up -d",
     "docker:stop": "docker-compose down",
     "k8s:deploy": "kubectl apply -k k8s/overlays/development",
@@ -32,10 +32,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Bionic-AI-Solutions/dev-template.git"
+    "url": "https://github.com/Bionic-AI-Solutions/rippal.git"
   },
   "bugs": {
-    "url": "https://github.com/Bionic-AI-Solutions/dev-template/issues"
+    "url": "https://github.com/Bionic-AI-Solutions/rippal/issues"
   },
-  "homepage": "https://github.com/Bionic-AI-Solutions/dev-template#readme"
+  "homepage": "https://github.com/Bionic-AI-Solutions/rippal#readme"
 }

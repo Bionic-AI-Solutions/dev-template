@@ -18,8 +18,8 @@ data:
     requestedIDTokenClaims: {"groups": {"essential": true}}
   repositories: |
     - type: git
-      url: https://github.com/Bionic-AI-Solutions/dev-pynode
-      name: dev-pynode
+      url: https://github.com/Bionic-AI-Solutions/rippal-new
+      name: rippal-new
   resource.customizations.health.argoproj.io_Application: |
     hs = {}
     hs.status = "Progressing"

@@ -1,14 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: dev-pynode-network-policy
-  namespace: dev-pynode
+  name: rippal-new-network-policy
+  namespace: rippal-new
   labels:
-    app: dev-pynode
+    app: rippal-new
 spec:
   podSelector:
     matchLabels:
-      app: dev-pynode
+      app: rippal-new
   policyTypes:
   - Ingress
   - Egress
@@ -19,7 +19,7 @@ spec:
           name: ingress-nginx
     - podSelector:
         matchLabels:
-          app: dev-pynode
+          app: rippal-new
     ports:
     - protocol: TCP
       port: 3000

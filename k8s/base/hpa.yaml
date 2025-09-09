@@ -1,15 +1,15 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: dev-pynode-hpa
-  namespace: dev-pynode
+  name: rippal-new-hpa
+  namespace: rippal-new
   labels:
-    app: dev-pynode
+    app: rippal-new
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: dev-pynode
+    name: rippal-new
   minReplicas: 2
   maxReplicas: 10
   metrics:
@@ -46,16 +46,16 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: dev-pynode-frontend-hpa
-  namespace: dev-pynode
+  name: rippal-new-frontend-hpa
+  namespace: rippal-new
   labels:
-    app: dev-pynode
+    app: rippal-new
     component: frontend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: dev-pynode-frontend
+    name: rippal-new-frontend
   minReplicas: 2
   maxReplicas: 5
   metrics:
