@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Dev-PyNode
 
 A comprehensive AI-powered development platform built with Node.js, Python, and modern containerization technologies.
@@ -12,6 +11,8 @@ A comprehensive AI-powered development platform built with Node.js, Python, and 
 - **CI/CD Ready**: GitHub Actions pipeline with automated testing and deployment
 - **Monitoring**: Prometheus, Grafana, and comprehensive logging
 - **Security**: JWT authentication, rate limiting, and security scanning
+- **SSH Server**: Remote access for development and debugging
+- **Kubernetes Tools**: kubectl, Helm, and k9s for cluster management
 
 ## 📋 Prerequisites
 
@@ -27,8 +28,8 @@ A comprehensive AI-powered development platform built with Node.js, Python, and 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Bionic-AI-Solutions/dev-pynode.git
-   cd dev-pynode
+   git clone https://github.com/Bionic-AI-Solutions/dev-template.git
+   cd dev-template
    ```
 
 2. **Configure environment**
@@ -46,8 +47,10 @@ A comprehensive AI-powered development platform built with Node.js, Python, and 
    - Frontend: http://localhost:3001
    - Backend API: http://localhost:3000
    - API Documentation: http://localhost:3000/docs
+   - Grafana Dashboard: http://localhost:3003 (admin/admin123)
    - pgAdmin: http://localhost:5050
    - Redis Commander: http://localhost:8081
+   - SSH Access: `ssh developer@localhost -p 2222` (password: developer)
    - MinIO Console: http://localhost:9001
    - Grafana: http://localhost:3003 (admin/admin123)
 
