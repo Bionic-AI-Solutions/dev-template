@@ -47,40 +47,12 @@ jobs:
         echo "Image built and pushed: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
         echo "ArgoCD should automatically sync this new image tag"
 
-    - name: Set up kubectl
-      if: github.ref == 'refs/heads/main'
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
-
-    - name: Configure kubectl for ArgoCD
+    - name: Configure ArgoCD Access
       if: github.ref == 'refs/heads/main'
       run: |
-        # Create kubeconfig from secret
-        echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
-        export KUBECONFIG=kubeconfig
-        
-        # Verify connection
-        kubectl cluster-info
-        
-        # Get ArgoCD server details
-        ARGOCD_SERVER=$(kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-        if [ -z "$ARGOCD_SERVER" ]; then
-          ARGOCD_SERVER=$(kubectl get svc argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        fi
-        if [ -z "$ARGOCD_SERVER" ]; then
-          ARGOCD_SERVER="argocd-server.argocd.svc.cluster.local"
-        fi
-        
-        echo "ARGOCD_SERVER=$ARGOCD_SERVER" >> $GITHUB_ENV
+        # Use external ArgoCD URL
+        echo "ARGOCD_SERVER=argocd.bionicaisolutions.com" >> $GITHUB_ENV
         echo "ARGOCD_PORT=443" >> $GITHUB_ENV
-
-    - name: Get ArgoCD Admin Password
-      if: github.ref == 'refs/heads/main'
-      run: |
-        export KUBECONFIG=kubeconfig
-        ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-        echo "ARGOCD_PASSWORD=$ARGOCD_PASSWORD" >> $GITHUB_ENV
 
     - name: Install ArgoCD CLI
       if: github.ref == 'refs/heads/main'
@@ -92,8 +64,8 @@ jobs:
     - name: Login to ArgoCD and Sync Application
       if: github.ref == 'refs/heads/main'
       run: |
-        # Login to ArgoCD
-        argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_PASSWORD --insecure
+        # Login to ArgoCD using external URL
+        argocd login $ARGOCD_SERVER --username admin --password ${{ secrets.ARGOCD_PASSWORD }}
         
         # Check if application exists
         if argocd app get dev-template >/dev/null 2>&1; then

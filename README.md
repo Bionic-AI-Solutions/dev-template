@@ -116,7 +116,7 @@ The GitHub Actions workflow automatically:
 **Required GitHub Secrets:**
 - `DOCKERHUB_USERNAME`: Your Docker Hub username
 - `DOCKERHUB_TOKEN`: Your Docker Hub access token
-- `KUBECONFIG`: Base64 encoded kubeconfig file for cluster access
+- `ARGOCD_PASSWORD`: ArgoCD admin password for argocd.bionicaisolutions.com
 
 ## 🔐 Access Information
 
