@@ -177,12 +177,14 @@ setup_docker() {
     # Update docker-compose.yml
     if [ -f "docker-compose.yml" ]; then
         sed -i "s/dev-pynode/$PROJECT_NAME/g" docker-compose.yml
+        sed -i "s/dev-template/$PROJECT_NAME/g" docker-compose.yml
         log_success "Docker configuration updated"
     fi
     
     # Update Dockerfile
     if [ -f "Dockerfile" ]; then
         sed -i "s/dev-pynode/$PROJECT_NAME/g" Dockerfile
+        sed -i "s/dev-template/$PROJECT_NAME/g" Dockerfile
         log_success "Dockerfile updated"
     fi
 }
