@@ -61,10 +61,31 @@ jobs:
         sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
         rm argocd-linux-amd64
 
+    - name: Test ArgoCD Connection
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Test if ArgoCD server is reachable
+        echo "Testing connection to ArgoCD server: $ARGOCD_SERVER"
+        if ! curl -k -s --connect-timeout 10 https://$ARGOCD_SERVER/api/version > /dev/null; then
+          echo "Error: Cannot connect to ArgoCD server at $ARGOCD_SERVER"
+          echo "Please check if the server is accessible and the URL is correct"
+          exit 1
+        fi
+        echo "ArgoCD server is reachable"
+
     - name: Login to ArgoCD and Sync Application
       if: github.ref == 'refs/heads/main'
       run: |
+        # Check if ArgoCD password is set
+        if [ -z "${{ secrets.ARGOCD_PASSWORD }}" ]; then
+          echo "Error: ARGOCD_PASSWORD secret is not set in GitHub repository"
+          echo "Please add the ArgoCD admin password as a repository secret"
+          echo "You can get the password by running: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+          exit 1
+        fi
+        
         # Login to ArgoCD using external URL
+        echo "Logging into ArgoCD at $ARGOCD_SERVER"
         argocd login $ARGOCD_SERVER --username admin --password ${{ secrets.ARGOCD_PASSWORD }}
         
         # Check if application exists
