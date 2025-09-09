@@ -86,29 +86,42 @@ collect_secrets() {
     echo "=========================================="
     echo
     
-    # Docker Hub credentials
+    # Set Docker Hub username
+    DOCKERHUB_USERNAME="docker4zerocool"
+    log_info "Docker Hub username: $DOCKERHUB_USERNAME"
+    
+    # Docker Hub token
     log_info "Docker Hub Setup:"
     echo "1. Go to: https://hub.docker.com/settings/security"
     echo "2. Create a new access token with 'Read, Write, Delete' permissions"
     echo "3. Copy the token (you won't be able to see it again)"
     echo
-    read -p "Enter your Docker Hub username: " DOCKERHUB_USERNAME
     read -s -p "Enter your Docker Hub access token: " DOCKERHUB_TOKEN
     echo
     echo
     
-    # ArgoCD password
+    # ArgoCD password - automatically retrieve
     log_info "ArgoCD Setup:"
-    echo "Get the ArgoCD admin password by running:"
-    echo "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
-    echo
-    read -s -p "Enter ArgoCD admin password: " ARGOCD_PASSWORD
-    echo
+    echo "Retrieving ArgoCD admin password..."
+    ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d 2>/dev/null)
+    
+    if [ -z "$ARGOCD_PASSWORD" ]; then
+        log_error "Failed to retrieve ArgoCD password. Please ensure:"
+        echo "1. ArgoCD is installed and running"
+        echo "2. You have kubectl access to the argocd namespace"
+        echo "3. The argocd-initial-admin-secret exists"
+        echo
+        echo "You can manually retrieve it with:"
+        echo "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+        exit 1
+    fi
+    
+    log_success "ArgoCD password retrieved successfully"
     echo
     
     # Validate inputs
-    if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ] || [ -z "$ARGOCD_PASSWORD" ]; then
-        log_error "All secrets are required. Please provide all credentials."
+    if [ -z "$DOCKERHUB_TOKEN" ]; then
+        log_error "Docker Hub token is required. Please provide the access token."
         exit 1
     fi
     
