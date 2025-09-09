@@ -3,8 +3,8 @@
 # =============================================================================
 # Dev-PyNode Bootstrap Script
 # =============================================================================
-# This script initializes a new Dev-PyNode project with all necessary
-# configurations and dependencies.
+# This script creates a new project by copying the dev-template and customizing it
+# with the specified project name, stack, and description.
 
 set -euo pipefail
 
@@ -20,6 +20,8 @@ PROJECT_NAME=""
 STACK=""
 DESCRIPTION=""
 GITHUB_ORG="Bionic-AI-Solutions"
+TEMPLATE_DIR=""
+PROJECT_DIR=""
 
 # =============================================================================
 # Helper Functions
@@ -71,6 +73,84 @@ check_dependencies() {
     log_info "Node.js and Python will run in Docker containers"
 }
 
+setup_paths() {
+    log_info "Setting up project paths..."
+    
+    # Get the directory where this script is located (template directory)
+    TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    
+    # Set project directory (parent directory of template)
+    PROJECT_DIR="$(dirname "$TEMPLATE_DIR")/$PROJECT_NAME"
+    
+    log_info "Template directory: $TEMPLATE_DIR"
+    log_info "Project directory: $PROJECT_DIR"
+    
+    # Check if project directory already exists
+    if [ -d "$PROJECT_DIR" ]; then
+        log_error "Project directory already exists: $PROJECT_DIR"
+        log_info "Please choose a different project name or remove the existing directory."
+        exit 1
+    fi
+    
+    log_success "Paths configured successfully"
+}
+
+copy_template() {
+    log_info "Copying template to new project directory..."
+    
+    # Create project directory
+    mkdir -p "$PROJECT_DIR"
+    
+    # Copy all files from template, excluding .git directory
+    rsync -av --exclude='.git' --exclude='node_modules' --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' "$TEMPLATE_DIR/" "$PROJECT_DIR/"
+    
+    log_success "Template copied to $PROJECT_DIR"
+}
+
+customize_project() {
+    log_info "Customizing project files with project name and details..."
+    
+    cd "$PROJECT_DIR"
+    
+    # Replace dev-template with project name in various files
+    local files_to_update=(
+        "docker-compose.yml"
+        "package.json"
+        "package-lock.json"
+        "README.md"
+        ".github/workflows/ci-cd.yml"
+        "k8s/base/deployment.yaml"
+        "k8s/base/service.yaml"
+        "k8s/base/configmap.yaml"
+        "k8s/overlays/development/kustomization.yaml"
+        "k8s/overlays/staging/kustomization.yaml"
+        "k8s/overlays/production/kustomization.yaml"
+    )
+    
+    for file in "${files_to_update[@]}"; do
+        if [ -f "$file" ]; then
+            log_info "Updating $file..."
+            sed -i "s/dev-template/$PROJECT_NAME/g" "$file"
+            sed -i "s/dev_pynode_db/${PROJECT_NAME//-/_}_db/g" "$file"
+            sed -i "s/Dev-PyNode/$PROJECT_NAME/g" "$file"
+            sed -i "s/AI-powered development platform with Node.js and Python backend/$DESCRIPTION/g" "$file"
+        fi
+    done
+    
+    # Update .env.example to .env
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        sed -i "s/PROJECT_NAME/$PROJECT_NAME/g" .env
+        sed -i "s/dev-template/$PROJECT_NAME/g" .env
+        log_success "Environment file created"
+    fi
+    
+    # Update any other files that might contain template references
+    find . -type f \( -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.json" -o -name "*.py" -o -name "*.ts" -o -name "*.js" \) -exec sed -i "s/dev-template/$PROJECT_NAME/g" {} \;
+    
+    log_success "Project files customized successfully"
+}
+
 validate_input() {
     if [ -z "$PROJECT_NAME" ]; then
         log_error "Project name is required"
@@ -107,120 +187,33 @@ validate_input() {
 create_repository() {
     log_info "Creating GitHub repository..."
     
+    cd "$PROJECT_DIR"
+    
     # Check if GitHub CLI is available
     if command -v gh &> /dev/null; then
         gh repo create "$GITHUB_ORG/$PROJECT_NAME" \
             --description "$DESCRIPTION" \
             --public \
-            --clone
+            --source=. \
+            --remote=origin \
+            --push
+        log_success "GitHub repository created and code pushed"
     else
         log_warning "GitHub CLI not found. Please create the repository manually:"
         log_info "Repository URL: https://github.com/$GITHUB_ORG/$PROJECT_NAME"
         log_info "Description: $DESCRIPTION"
         log_info "Visibility: Public"
+        log_info "Then run: git remote add origin https://github.com/$GITHUB_ORG/$PROJECT_NAME.git"
+        log_info "And push: git push -u origin main"
     fi
 }
 
-setup_project_structure() {
-    log_info "Setting up project structure..."
-    
-    # Create directories
-    mkdir -p backend/{nodejs,python}
-    mkdir -p frontend
-    mkdir -p scripts
-    mkdir -p tests/{unit,integratione2e}
-    mkdir -p docs/feature
-    mkdir -p k8s/{base,overlays/{development,staging,production}}
-    mkdir -p docker
-    mkdir -p .github/{workflows,ISSUE_TEMPLATE}
-    
-    log_success "Project structure created"
-}
-
-setup_environment() {
-    log_info "Setting up environment configuration..."
-    
-    # Copy and customize .env.example
-    if [ -f ".env.example" ]; then
-        cp .env.example .env
-        sed -i "s/PROJECT_NAME/$PROJECT_NAME/g" .env
-        sed -i "s/dev-pynode/$PROJECT_NAME/g" .env
-        log_success "Environment configuration created"
-    else
-        log_warning ".env.example not found, skipping environment setup"
-    fi
-}
-
-setup_package_files() {
-    log_info "Setting up package files..."
-    
-    # Update package.json
-    if [ -f "package.json" ]; then
-        sed -i "s/dev-pynode/$PROJECT_NAME/g" package.json
-        sed -i "s/AI-powered development platform with Node.js and Python backend/$DESCRIPTION/g" package.json
-        log_success "package.json updated"
-    fi
-    
-    # Update requirements.txt
-    if [ -f "requirements.txt" ]; then
-        log_success "requirements.txt ready"
-    fi
-}
-
-setup_docker() {
-    log_info "Setting up Docker configuration..."
-    
-    # Update docker-compose.yml
-    if [ -f "docker-compose.yml" ]; then
-        sed -i "s/dev-pynode/$PROJECT_NAME/g" docker-compose.yml
-        sed -i "s/dev-template/$PROJECT_NAME/g" docker-compose.yml
-        log_success "Docker configuration updated"
-    fi
-    
-    # Update Dockerfile
-    if [ -f "Dockerfile" ]; then
-        sed -i "s/dev-pynode/$PROJECT_NAME/g" Dockerfile
-        sed -i "s/dev-template/$PROJECT_NAME/g" Dockerfile
-        log_success "Dockerfile updated"
-    fi
-}
-
-setup_kubernetes() {
-    log_info "Setting up Kubernetes manifests..."
-    
-    # Update k8s manifests
-    find k8s/ -name "*.yaml" -exec sed -i "s/dev-pynode/$PROJECT_NAME/g" {} \;
-    find k8s/ -name "*.yaml" -exec sed -i "s/dev_pynode_db/${PROJECT_NAME//-/_}_db/g" {} \;
-    find k8s/ -name "*.yaml" -exec sed -i "s/dev_template/${PROJECT_NAME//-/_}_db/g" {} \;
-    
-    log_success "Kubernetes manifests updated"
-}
-
-setup_github_actions() {
-    log_info "Setting up GitHub Actions..."
-    
-    # Update CI/CD pipeline
-    if [ -f ".github/workflows/ci-cd.yml" ]; then
-        sed -i "s/dev-pynode/$PROJECT_NAME/g" .github/workflows/ci-cd.yml
-        sed -i "s/bionic-ai-solutions\/dev-pynode/$GITHUB_ORG\/$PROJECT_NAME/g" .github/workflows/ci-cd.yml
-        log_success "GitHub Actions pipeline updated"
-    fi
-}
-
-setup_documentation() {
-    log_info "Setting up documentation..."
-    
-    # Update README.md
-    if [ -f "README.md" ]; then
-        sed -i "s/Dev-PyNode/$PROJECT_NAME/g" README.md
-        sed -i "s/dev-pynode/$PROJECT_NAME/g" README.md
-        sed -i "s/AI-powered development platform with Node.js and Python backend/$DESCRIPTION/g" README.md
-        log_success "Documentation updated"
-    fi
-}
+# These functions are now handled by customize_project()
 
 install_dependencies() {
     log_info "Installing dependencies in Docker containers..."
+    
+    cd "$PROJECT_DIR"
     
     # Build Docker images to install dependencies
     if [ -f "docker-compose.yml" ]; then
@@ -268,6 +261,8 @@ install_dependencies() {
 setup_git() {
     log_info "Setting up Git repository..."
     
+    cd "$PROJECT_DIR"
+    
     # Initialize git if not already initialized
     if [ ! -d ".git" ]; then
         git init
@@ -295,6 +290,8 @@ Description: $DESCRIPTION"
 setup_hooks() {
     log_info "Setting up Git hooks..."
     
+    cd "$PROJECT_DIR"
+    
     # Install husky if package.json exists - use Docker to avoid host installation
     if [ -f "package.json" ] && grep -q "husky" package.json; then
         log_info "Installing Git hooks using Docker..."
@@ -305,6 +302,8 @@ setup_hooks() {
 
 create_initial_files() {
     log_info "Creating initial application files..."
+    
+    cd "$PROJECT_DIR"
     
     # Create basic application structure based on stack
     case "$STACK" in
@@ -444,6 +443,8 @@ create_fullstack_structure() {
 run_tests() {
     log_info "Running initial tests in Docker containers..."
     
+    cd "$PROJECT_DIR"
+    
     # Run tests in Docker containers if they exist
     if [ -f "docker-compose.yml" ]; then
         log_info "Running tests in Docker containers..."
@@ -468,14 +469,24 @@ run_tests() {
     log_success "Initial tests completed"
 }
 
-show_completion_message() {
+handoff_to_user() {
     log_success "Project bootstrap completed successfully!"
     echo
+    echo "=========================================="
+    echo "  Project Created: $PROJECT_NAME"
+    echo "=========================================="
+    echo
+    echo "Project location: $PROJECT_DIR"
+    echo "GitHub repository: https://github.com/$GITHUB_ORG/$PROJECT_NAME"
+    echo
     echo "Next steps:"
-    echo "1. Review and customize the configuration files"
-    echo "2. Update the .env file with your specific settings"
-    echo "3. Start development: docker-compose up -d"
-    echo "4. Access the application at http://localhost:3000"
+    echo "1. Change to the project directory:"
+    echo "   cd $PROJECT_DIR"
+    echo
+    echo "2. Review and customize the configuration files"
+    echo "3. Update the .env file with your specific settings"
+    echo "4. Start development: docker-compose up -d"
+    echo "5. Access the application at http://localhost:3000"
     echo
     echo "Useful commands:"
     echo "- Start development: docker-compose up -d"
@@ -488,8 +499,17 @@ show_completion_message() {
     echo "No Node.js or Python installation required on the host system."
     echo
     echo "Documentation: docs/README.md"
-    echo "GitHub repository: https://github.com/$GITHUB_ORG/$PROJECT_NAME"
+    echo
+    echo "=========================================="
+    echo "  Ready to start development!"
+    echo "=========================================="
+    echo
+    echo "To continue working on this project, run:"
+    echo "  cd $PROJECT_DIR"
+    echo
 }
+
+# show_completion_message() is now replaced by handoff_to_user()
 
 # =============================================================================
 # Main Script
@@ -541,20 +561,16 @@ main() {
     
     # Run bootstrap steps
     check_dependencies
-    create_repository
-    setup_project_structure
-    setup_environment
-    setup_package_files
-    setup_docker
-    setup_kubernetes
-    setup_github_actions
-    setup_documentation
-    install_dependencies
-    create_initial_files
+    setup_paths
+    copy_template
+    customize_project
     setup_git
+    create_repository
+    create_initial_files
+    install_dependencies
     setup_hooks
     run_tests
-    show_completion_message
+    handoff_to_user
 }
 
 # Run main function
