@@ -129,9 +129,40 @@ setup_paths() {
     
     # Check if project directory already exists
     if [ -d "$PROJECT_DIR" ]; then
-        log_error "Project directory already exists: $PROJECT_DIR"
-        log_info "Please choose a different project name or remove the existing directory."
-        exit 1
+        log_warning "Project directory already exists: $PROJECT_DIR"
+        echo
+        echo "What would you like to do?"
+        echo "1) Remove existing directory and create new project"
+        echo "2) Choose a different project name"
+        echo "3) Exit"
+        echo
+        read -p "Enter your choice (1-3): " choice
+        
+        case $choice in
+            1)
+                log_info "Removing existing directory..."
+                rm -rf "$PROJECT_DIR"
+                log_success "Existing directory removed"
+                ;;
+            2)
+                if prompt_for_new_name; then
+                    # Update project directory path with new name
+                    PROJECT_DIR="$(dirname "$TEMPLATE_DIR")/$PROJECT_NAME"
+                    log_info "Updated project directory: $PROJECT_DIR"
+                else
+                    log_error "Failed to get valid project name. Exiting..."
+                    exit 1
+                fi
+                ;;
+            3)
+                log_info "Exiting..."
+                exit 0
+                ;;
+            *)
+                log_error "Invalid choice. Exiting..."
+                exit 1
+                ;;
+        esac
     fi
     
     log_success "Paths configured successfully"
@@ -236,6 +267,93 @@ validate_input() {
     fi
 }
 
+prompt_for_new_name() {
+    log_info "Let's choose a new project name..."
+    echo
+    echo "Project name requirements:"
+    echo "- Use kebab-case (lowercase letters, numbers, and hyphens only)"
+    echo "- Examples: my-awesome-project, user-management-api, payment-processor"
+    echo
+    read -p "Enter new project name: " NEW_PROJECT_NAME
+    
+    # Validate new project name
+    if [[ ! "$NEW_PROJECT_NAME" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+        log_error "Invalid project name format. Must be kebab-case (e.g., my-awesome-project)"
+        return 1
+    fi
+    
+    # Update the project name
+    PROJECT_NAME="$NEW_PROJECT_NAME"
+    log_success "Project name updated to: $PROJECT_NAME"
+    return 0
+}
+
+check_existing_repository() {
+    log_info "Checking for existing GitHub repository..."
+    
+    # Check if GitHub CLI is available
+    if ! command -v gh &> /dev/null; then
+        log_warning "GitHub CLI not found. Skipping repository check."
+        return 0
+    fi
+    
+    # Check if user is logged in to GitHub CLI
+    if ! gh auth status &> /dev/null; then
+        log_warning "Not logged in to GitHub CLI. Skipping repository check."
+        return 0
+    fi
+    
+    # Check if repository exists
+    if gh repo view "$GITHUB_ORG/$PROJECT_NAME" &> /dev/null; then
+        log_warning "GitHub repository already exists: $GITHUB_ORG/$PROJECT_NAME"
+        echo
+        echo "What would you like to do?"
+        echo "1) Delete existing repository and create new one"
+        echo "2) Choose a different project name"
+        echo "3) Continue with existing repository (update it)"
+        echo "4) Exit"
+        echo
+        read -p "Enter your choice (1-4): " choice
+        
+        case $choice in
+            1)
+                log_info "Deleting existing repository..."
+                gh repo delete "$GITHUB_ORG/$PROJECT_NAME" --yes
+                log_success "Existing repository deleted"
+                ;;
+            2)
+                if prompt_for_new_name; then
+                    # Update project directory path with new name
+                    PROJECT_DIR="$(dirname "$TEMPLATE_DIR")/$PROJECT_NAME"
+                    log_info "Updated project directory: $PROJECT_DIR"
+                    # Re-check if the new repository exists
+                    if gh repo view "$GITHUB_ORG/$PROJECT_NAME" &> /dev/null; then
+                        log_warning "Repository with new name also exists. Please choose a different name."
+                        exit 1
+                    fi
+                else
+                    log_error "Failed to get valid project name. Exiting..."
+                    exit 1
+                fi
+                ;;
+            3)
+                log_info "Continuing with existing repository..."
+                log_warning "This will update the existing repository with new content"
+                ;;
+            4)
+                log_info "Exiting..."
+                exit 0
+                ;;
+            *)
+                log_error "Invalid choice. Exiting..."
+                exit 1
+                ;;
+        esac
+    else
+        log_success "No existing repository found. Ready to create new one."
+    fi
+}
+
 create_repository() {
     log_info "Creating GitHub repository..."
     
@@ -243,13 +361,26 @@ create_repository() {
     
     # Check if GitHub CLI is available
     if command -v gh &> /dev/null; then
-        gh repo create "$GITHUB_ORG/$PROJECT_NAME" \
-            --description "$DESCRIPTION" \
-            --public \
-            --source=. \
-            --remote=origin \
-            --push
-        log_success "GitHub repository created and code pushed"
+        # Check if repository already exists (in case user chose option 3)
+        if gh repo view "$GITHUB_ORG/$PROJECT_NAME" &> /dev/null; then
+            log_info "Repository exists, updating it..."
+            # Add remote if it doesn't exist
+            if ! git remote get-url origin &> /dev/null; then
+                git remote add origin "https://github.com/$GITHUB_ORG/$PROJECT_NAME.git"
+            fi
+            # Push to existing repository
+            git push -u origin main --force
+            log_success "Repository updated with new content"
+        else
+            # Create new repository
+            gh repo create "$GITHUB_ORG/$PROJECT_NAME" \
+                --description "$DESCRIPTION" \
+                --public \
+                --source=. \
+                --remote=origin \
+                --push
+            log_success "GitHub repository created and code pushed"
+        fi
     else
         log_warning "GitHub CLI not found. Please create the repository manually:"
         log_info "Repository URL: https://github.com/$GITHUB_ORG/$PROJECT_NAME"
@@ -676,6 +807,7 @@ main() {
     check_dependencies
     collect_secrets
     setup_paths
+    check_existing_repository
     copy_template
     customize_project
     setup_git
